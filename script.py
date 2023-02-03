@@ -34,10 +34,10 @@ def horizontal_shift(image:Image):
     pixels = list(image.getdata())
     _new_pixels = []
     for y in range(height):
-        manipulate_pixel_rng = random.randint(1,100)
+        manipulate_pixel_chance_rng = random.randint(1,100)
         shift_distance_rng   = random.randint(0,width)
         for x in range(width):
-            if manipulate_pixel_rng < 10:
+            if manipulate_pixel_chance_rng < 10:
                 new_x = (x+shift_distance_rng) % width
                 new_y = (y+shift_distance_rng) % height
                 _new_pixels.append(pixels[new_y * width + new_x])
@@ -46,23 +46,6 @@ def horizontal_shift(image:Image):
     print("[green][*][/green] Done shifting pixels")
     return _new_pixels
 
-def vertical_shift(image: Image):
-    """shifts pixels vertically"""
-    print("[green][*][/green] Shifting pixels vertically")
-    width, height = image.size
-    pixels = list(image.getdata())
-    _new_pixels = []
-    for y in range(height):
-        manipulate_pixel_rng = random.randint(1,100)
-        shift_distance_rng   = random.randint(0,height)
-        for x in range(width):
-            if manipulate_pixel_rng < 10:
-                new_y = (y+shift_distance_rng) % height
-                _new_pixels.append(pixels[new_y * width + x])
-            else:
-                _new_pixels.append(pixels[y * width + x])
-    print("[green][*][/green] Done shifting pixels vertically")
-    return _new_pixels
 
 def combine_pixels(*pixel_lists):
     """Combines lists of pixels into one list"""
@@ -84,11 +67,9 @@ def combine_pixels(*pixel_lists):
 IMAGE_FILE = "image.jpg"
 im = Image.open(IMAGE_FILE)
 noise_pixels = noise(im)
-#lateral_shift_pixels = horizontal_shift(im)
-vertical_shift_pixels = vertical_shift(im)
+lateral_shift_pixels = horizontal_shift(im)
 pixels = combine_pixels(
-                            vertical_shift_pixels,
-                            #lateral_shift_pixels,
+                            lateral_shift_pixels,
                             noise_pixels,
                         )
 im.putdata(pixels)
