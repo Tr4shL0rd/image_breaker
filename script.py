@@ -219,6 +219,7 @@ def combine_pixels(*pixel_lists) -> List:
     return combined_pixels
 
 def main():
+
     """Main entery point"""
     if not args.quiet:
         print(f"Starting: {current_time()}")
