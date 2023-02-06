@@ -9,6 +9,7 @@ from tqdm import tqdm
 from rich import print #pylint: disable=redefined-builtin
 from PIL import Image
 
+VERSION = "0.6.0"
 def current_time(just_time=False,just_date=False) -> str:
     """
     returns current time
@@ -31,7 +32,6 @@ def current_time(just_time=False,just_date=False) -> str:
     else:
         return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
-VERSION = "0.5.5"
 
 VERBOSE_STRING = "[yellow][VERBOSE][/yellow]"
 
@@ -64,6 +64,24 @@ parser.add_argument(
                     action="store_true",
                     help="force output to the default location"
                     )
+parser.add_argument(
+                    "--no-progress",
+                    dest="no_progress",
+                    action="store_true",
+                    help="disable progress bars"
+                    )
+parser.add_argument(
+                    "-q","--quiet",
+                    dest="quiet",
+                    action="store_true",
+                    help="quiet output"
+                    )
+parser.add_argument(
+                    "-o","--output",
+                    dest="output_name",
+                    action="store",
+                    help="name of the file outputted"
+                    )
 args = parser.parse_args()
 
 
@@ -79,10 +97,11 @@ def noise(image:Image) -> List:
     --------
         * _new_pixels `list`: a list of pixels with added noise
     """
-    if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} [NOISE()]")
-    else:
-        print(f"{CORRECT} Adding noise")
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} [NOISE()]")
+        else:
+            print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
     _new_pixels = []
     for pixel in tqdm(
@@ -90,7 +109,8 @@ def noise(image:Image) -> List:
                     total=len(img_pixels),
                     desc="Adding noise",
                     bar_format="{desc}: {percentage:3.0f}% |{bar}|",
-                    leave=False):
+                    leave=False,
+                    disable=args.no_progress or args.quiet):
         # RNG for adding or subtracting pixel brightness
         pixel_brightness_rng = random.randint(1,2)
         # RNG to determine if a pixel should be manipulated
@@ -125,10 +145,11 @@ def shift(image:Image) -> List:
     --------
         * _new_pixels `list`: a list of shifted pixels
     """
-    if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} ADDING PIXEL SHIFTING TO {image.filename} [SHIFT()]")
-    else:
-        print(f"{CORRECT} Shifting pixels")
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} ADDING PIXEL SHIFTING TO {image.filename} [SHIFT()]")
+        else:
+            print(f"{CORRECT} Shifting pixels")
     width, height = image.size
     img_pixels = list(image.getdata()) # RGB data of each pixel
     _new_pixels = []
@@ -137,7 +158,8 @@ def shift(image:Image) -> List:
                     total=height,
                     desc="shifting",
                     bar_format="{desc}: {percentage:3.0f}% |{bar}|",
-                    leave=False):
+                    leave=False,
+                    disable=args.no_progress or args.quiet):
         # Generate a random integer between 1 and 100
         manipulate_pixel_chance_rng = random.randint(1,100)
         # Generate a random integer between 0 and the width of the image
@@ -167,18 +189,20 @@ def combine_pixels(*pixel_lists) -> List:
     --------
         * combined_pixels `list`: a list of combined pixels
     """
-    if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} "\
-                                            "LISTS OF PIXELS [COMBINE_PIXELS()]")
-    else:
-        print(f"{CORRECT} Combining pixels")
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} "\
+                                                "LISTS OF PIXELS [COMBINE_PIXELS()]")
+        else:
+            print(f"{CORRECT} Combining pixels")
     combined_pixels = []
     for img_pixels in tqdm(
                             zip(*pixel_lists),
                             desc="combining pixels",
                             total=len(pixel_lists[0]),
                             bar_format="{desc}:{percentage:3.0f}% |{bar}|",
-                            leave=False):
+                            leave=False,
+                            disable=args.no_progress or args.quiet):
         combined_pixel = [0, 0, 0]
         # Loop over the pixels and add the corresponding color channels
         for pixel in img_pixels:
@@ -194,13 +218,26 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main():
     """Main entery point"""
-    print(f"Starting: {current_time()}")
+    if not args.quiet:
+        print(f"Starting: {current_time()}")
+
     image_file = Path(args.image).absolute()
-    image_path = image_file.parent
-    default_path = Path(os.path.join(Path.cwd(), "output", f"new_{image_file.name}"))
+    image_path = Path(image_file.parent)
+    file_name = Path(f"new_{image_file.name}")
+    if not image_file.exists():
+        print(f"[red underline][WARNING] FILE \"{image_file}\" WAS NOT FOUND[/red underline]")
+        exit()
+    if args.output_name:
+        file_name = Path(args.output_name)
+        if not file_name.suffix:
+            print(f"[red underline][WARNING] NO FILE EXTENSION GIVEN! "\
+                f"using \"{image_file.suffix}\"[/red underline]")
+            file_name = f"{file_name}{image_file.suffix}"
+
+    default_path = Path(os.path.join(Path.cwd(), "output", file_name))
     if image_path == Path.cwd() or args.default_path:
         new_image_file = default_path
-        if args.verbose:
+        if args.verbose and not args.quiet:
             print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: "\
             f"{new_image_file} [MAIN()]")
     else:
@@ -214,19 +251,20 @@ def main():
                             shift_pixels,
                             noise_pixels,
                             )
-    if args.verbose:
+    if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
     im.putdata(pixels)
-    if args.verbose:
+    if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
-
     im.save(new_image_file)
 
-    if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} SAVED TO [underline]{new_image_file}[/underline]"\
-                "[MAIN()]")
-    else:
-        print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
-    print(f"Finished: {current_time()}")
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} SAVED TO"\
+                f"[underline]{new_image_file}[/underline] [MAIN()]")
+        else:
+            print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
+    if not args.quiet:
+        print(f"Finished: {current_time()}")
 if __name__ == "__main__":
     main()
