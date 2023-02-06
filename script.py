@@ -5,6 +5,7 @@ import os.path
 from datetime import datetime
 from typing import List
 from pathlib import Path
+from tqdm import tqdm
 from rich import print #pylint: disable=redefined-builtin
 from PIL import Image
 
@@ -84,7 +85,12 @@ def noise(image:Image) -> List:
         print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
     _new_pixels = []
-    for pixel in img_pixels:
+    for pixel in tqdm(
+                    img_pixels,
+                    total=len(img_pixels),
+                    desc="Adding noise",
+                    bar_format="{desc}: {percentage:3.0f}% |{bar}|",
+                    leave=False):
         # RNG for adding or subtracting pixel brightness
         pixel_brightness_rng = random.randint(1,2)
         # RNG to determine if a pixel should be manipulated
@@ -107,9 +113,9 @@ def noise(image:Image) -> List:
         _new_pixels.append(broken_pixel)
     return _new_pixels
 
-def horizontal_shift(image:Image) -> List:
+def shift(image:Image) -> List:
     """
-    Shifts the pixels in an image horizontally
+    Shifts the pixels of an image
 
     PARAMS:
     -------
@@ -120,13 +126,18 @@ def horizontal_shift(image:Image) -> List:
         * _new_pixels `list`: a list of shifted pixels
     """
     if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} ADDING HORIZONTAL PIXEL SHIFTING TO {image.filename} [HORIZONTAL_SHIFT()]")
+        print(f"{current_time()}{VERBOSE_STRING} ADDING PIXEL SHIFTING TO {image.filename} [SHIFT()]")
     else:
-        print(f"{CORRECT} Shifting pixels horizontally")
+        print(f"{CORRECT} Shifting pixels")
     width, height = image.size
     img_pixels = list(image.getdata()) # RGB data of each pixel
     _new_pixels = []
-    for _y in range(height):
+    for _y in tqdm(
+                    range(height),
+                    total=height,
+                    desc="shifting",
+                    bar_format="{desc}: {percentage:3.0f}% |{bar}|",
+                    leave=False):
         # Generate a random integer between 1 and 100
         manipulate_pixel_chance_rng = random.randint(1,100)
         # Generate a random integer between 0 and the width of the image
@@ -156,14 +167,18 @@ def combine_pixels(*pixel_lists) -> List:
     --------
         * combined_pixels `list`: a list of combined pixels
     """
-    #exit()
     if args.verbose:
         print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} "\
                                             "LISTS OF PIXELS [COMBINE_PIXELS()]")
     else:
         print(f"{CORRECT} Combining pixels")
     combined_pixels = []
-    for img_pixels in zip(*pixel_lists):
+    for img_pixels in tqdm(
+                            zip(*pixel_lists),
+                            desc="combining pixels",
+                            total=len(pixel_lists[0]),
+                            bar_format="{desc}:{percentage:3.0f}% |{bar}|",
+                            leave=False):
         combined_pixel = [0, 0, 0]
         # Loop over the pixels and add the corresponding color channels
         for pixel in img_pixels:
@@ -194,9 +209,9 @@ def main():
     im = Image.open(image_file)#pylint: disable=invalid-name
 
     noise_pixels = noise(im)
-    horizontal_shift_pixels = horizontal_shift(im)
+    shift_pixels = shift(im)
     pixels = combine_pixels(
-                            horizontal_shift_pixels,
+                            shift_pixels,
                             noise_pixels,
                             )
     if args.verbose:
