@@ -7,7 +7,8 @@ from pathlib import Path
 from rich import print #pylint: disable=redefined-builtin
 from PIL import Image
 
-VERSION = "0.5.3"
+VERSION = "0.5.4"
+#TODO: maybe edit metadata to show what manipulation has been done to the image
 
 parser = argparse.ArgumentParser(
                                 prog="dataMosh.py",
@@ -59,7 +60,6 @@ def noise(image:Image) -> List:
         else:
             broken_pixel = (pixel[0],pixel[1],pixel[2])
         _new_pixels.append(broken_pixel)
-    #print("[green][*][/green] Done adding noise")
     return _new_pixels
 
 def horizontal_shift(image:Image) -> List:
@@ -94,7 +94,6 @@ def horizontal_shift(image:Image) -> List:
             else:
                 # Append the original pixel to the new_pixels list
                 _new_pixels.append(img_pixels[_y * width + _x])
-    #print("[green][*][/green] Done shifting pixels")
     return _new_pixels
 
 
@@ -134,8 +133,11 @@ def main():
 
     image_file = Path(args.image).absolute()
     image_path = image_file.parent
-    new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
-
+    if image_path == Path.cwd():
+        # Default image output
+        new_image_file = Path(os.path.join(Path.cwd(), "output", f"new_{image_file.name}")) 
+    else:
+        new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
     im = Image.open(image_file)#pylint: disable=invalid-name
 
     noise_pixels = noise(im)
@@ -147,7 +149,7 @@ def main():
     im.putdata(pixels)
 
     im.save(new_image_file)
-    print(f"[green][DONE][/green] Saved to {new_image_file}")
+    print(f"[green][DONE][/green] Saved to [underline]{new_image_file}[/underline]")
 
 if __name__ == "__main__":
     main()
