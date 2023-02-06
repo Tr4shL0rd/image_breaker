@@ -10,28 +10,6 @@ from rich import print #pylint: disable=redefined-builtin
 from PIL import Image
 
 VERSION = "0.6.0"
-def current_time(just_time=False,just_date=False) -> str:
-    """
-    returns current time
-
-    PARAMS:
-    -------
-        * just_time `bool`: return only the time
-        * just_date `bool`: return only the date
-
-    RETURNS:
-    -------
-        * returns the date and or time
-    """
-    if just_time:
-        return datetime.now().strftime("[%H:%M:%S]")
-    if just_date:
-        return datetime.now().strftime("[%d/%m/%Y]")
-    if just_date and just_time :
-        return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
-    else:
-        return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
-
 
 VERBOSE_STRING = "[yellow][VERBOSE][/yellow]"
 
@@ -40,6 +18,9 @@ DONE    = "[green][DONE][/green]"
 
 #TODO: maybe edit metadata to show what manipulation has been done to the image
 #TODO: allow multiple files to be given from command line and loop over each file
+
+
+
 
 parser = argparse.ArgumentParser(
                                 prog="dataMosh.py",
@@ -84,6 +65,27 @@ parser.add_argument(
                     )
 args = parser.parse_args()
 
+def current_time(just_time=False,just_date=False) -> str:
+    """
+    returns current time
+
+    PARAMS:
+    -------
+        * just_time `bool`: return only the time
+        * just_date `bool`: return only the date
+
+    RETURNS:
+    -------
+        * returns the date and or time
+    """
+    if just_time:
+        return datetime.now().strftime("[%H:%M:%S]")
+    if just_date:
+        return datetime.now().strftime("[%d/%m/%Y]")
+    if just_date and just_time :
+        return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
+    else:
+        return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
 def noise(image:Image) -> List:
     """
