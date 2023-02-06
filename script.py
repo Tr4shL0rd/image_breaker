@@ -2,12 +2,23 @@
 import random
 import argparse
 import os.path
+from datetime import datetime
 from typing import List
 from pathlib import Path
 from rich import print #pylint: disable=redefined-builtin
 from PIL import Image
 
+def current_time():
+    """returns current time"""
+    return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
+
 VERSION = "0.5.4"
+
+VERBOSE_STRING = "[yellow][VERBOSE][/yellow]"
+
+CORRECT = "[green][*][/green]"
+DONE    = "[green][DONE][/green]"
+
 #TODO: maybe edit metadata to show what manipulation has been done to the image
 
 parser = argparse.ArgumentParser(
@@ -21,8 +32,14 @@ parser.add_argument(
                     action="store",
                     help="image to manipulate",
                     )
-
+parser.add_argument(
+                    "-v","--verbose",
+                    dest="verbose",
+                    action="store_true",
+                    help="verbose output"
+                    )
 args = parser.parse_args()
+
 
 def noise(image:Image) -> List:
     """
@@ -36,7 +53,10 @@ def noise(image:Image) -> List:
     -------
         * _new_pixels `list`: a list of pixels with added noise
     """
-    print("[green][*][/green] Adding noise")
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} WORKING ON {image.filename} [NOISE]")
+    else:
+        print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
     _new_pixels = []
     for pixel in img_pixels:
@@ -74,7 +94,10 @@ def horizontal_shift(image:Image) -> List:
     -------
         * _new_pixels `list`: a list of shifted pixels
     """
-    print("[green][*][/green] Shifting pixels laterally")
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} WORKING ON {image.filename} [HORIZONTAL SHIFTING]")
+    else:
+        print(f"{CORRECT} Shifting pixels laterally")
     width, height = image.size
     img_pixels = list(image.getdata()) # RGB data of each pixel
     _new_pixels = []
@@ -96,8 +119,6 @@ def horizontal_shift(image:Image) -> List:
                 _new_pixels.append(img_pixels[_y * width + _x])
     return _new_pixels
 
-
-
 def combine_pixels(*pixel_lists) -> List:
     """
     Combines lists of pixels into one list
@@ -110,7 +131,11 @@ def combine_pixels(*pixel_lists) -> List:
     -------
         * combined_pixels `list`: a list of combined pixels
     """
-    print("[green][*][/green] Combining pixels")
+    #exit()
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} LISTS OF PIXELS [COMBINE_PIXELS]")
+    else:
+        print(f"{CORRECT} Combining pixels")
     combined_pixels = []
     for img_pixels in zip(*pixel_lists):
         combined_pixel = [0, 0, 0]
@@ -126,18 +151,18 @@ def combine_pixels(*pixel_lists) -> List:
         combined_pixels.append(combined_pixel)
     return combined_pixels
 
-
-
 def main():
     """Main entery point"""
-
     image_file = Path(args.image).absolute()
     image_path = image_file.parent
     if image_path == Path.cwd():
         # Default image output
         new_image_file = Path(os.path.join(Path.cwd(), "output", f"new_{image_file.name}")) 
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: {new_image_file} [MAIN]")
     else:
         new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
+    
     im = Image.open(image_file)#pylint: disable=invalid-name
 
     noise_pixels = noise(im)
@@ -149,7 +174,10 @@ def main():
     im.putdata(pixels)
 
     im.save(new_image_file)
-    print(f"[green][DONE][/green] Saved to [underline]{new_image_file}[/underline]")
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} save to [underline]{new_image_file}[/underline]")
+    else:
+        print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
 
 if __name__ == "__main__":
     main()
