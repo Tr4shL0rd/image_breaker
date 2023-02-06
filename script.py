@@ -8,9 +8,27 @@ from pathlib import Path
 from rich import print #pylint: disable=redefined-builtin
 from PIL import Image
 
-def current_time():
-    """returns current time"""
-    return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
+def current_time(just_time=False,just_date=False) -> str:
+    """
+    returns current time
+
+    PARAMS:
+    -------
+        * just_time `bool`: return only the time
+        * just_date `bool`: return only the date
+
+    RETURNS:
+    -------
+        * returns the date and or time
+    """
+    if just_time:
+        return datetime.now().strftime("[%H:%M:%S]")
+    if just_date:
+        return datetime.now().strftime("[%d/%m/%Y]")
+    if just_date and just_time :
+        return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
+    else:
+        return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
 VERSION = "0.5.5"
 
@@ -39,6 +57,12 @@ parser.add_argument(
                     action="store_true",
                     help="verbose output"
                     )
+parser.add_argument(
+                    "-d","--default-output",
+                    dest="default_path",
+                    action="store_true",
+                    help="force output to the default location"
+                    )
 args = parser.parse_args()
 
 
@@ -46,16 +70,16 @@ def noise(image:Image) -> List:
     """
     Adds pseudo noise to an image
 
-    Parameters:
-    ----------
+    PARAMS:
+    -------
         * image `Image`: an instance of the Image class
 
-    Returns:
-    -------
+    RETURNS:
+    --------
         * _new_pixels `list`: a list of pixels with added noise
     """
     if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} WORKING ON {image.filename} [NOISE]")
+        print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} [NOISE()]")
     else:
         print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
@@ -87,18 +111,18 @@ def horizontal_shift(image:Image) -> List:
     """
     Shifts the pixels in an image horizontally
 
-    Parameters:
-    ----------
+    PARAMS:
+    -------
         * image `Image`: input image
 
-    Returns:
-    -------
+    RETURNS:
+    --------
         * _new_pixels `list`: a list of shifted pixels
     """
     if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} WORKING ON {image.filename} [HORIZONTAL SHIFTING]")
+        print(f"{current_time()}{VERBOSE_STRING} ADDING HORIZONTAL PIXEL SHIFTING TO {image.filename} [HORIZONTAL_SHIFT()]")
     else:
-        print(f"{CORRECT} Shifting pixels laterally")
+        print(f"{CORRECT} Shifting pixels horizontally")
     width, height = image.size
     img_pixels = list(image.getdata()) # RGB data of each pixel
     _new_pixels = []
@@ -124,18 +148,18 @@ def combine_pixels(*pixel_lists) -> List:
     """
     Combines lists of pixels into one list
 
-    Parameters:
-    ----------
+    PARAMS:
+    -------
         * *pixel_lists `list`: variable number of lists of pixels
 
-    Returns:
-    -------
+    RETURNS:
+    --------
         * combined_pixels `list`: a list of combined pixels
     """
     #exit()
     if args.verbose:
         print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} "\
-                                            "LISTS OF PIXELS [COMBINE_PIXELS]")
+                                            "LISTS OF PIXELS [COMBINE_PIXELS()]")
     else:
         print(f"{CORRECT} Combining pixels")
     combined_pixels = []
@@ -155,14 +179,15 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main():
     """Main entery point"""
+    print(f"Starting: {current_time()}")
     image_file = Path(args.image).absolute()
     image_path = image_file.parent
-    if image_path == Path.cwd():
-        # Default image output
-        new_image_file = Path(os.path.join(Path.cwd(), "output", f"new_{image_file.name}"))
+    default_path = Path(os.path.join(Path.cwd(), "output", f"new_{image_file.name}"))
+    if image_path == Path.cwd() or args.default_path:
+        new_image_file = default_path
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: "\
-                                                            "{new_image_file} [MAIN]")
+            f"{new_image_file} [MAIN()]")
     else:
         new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
 
@@ -174,13 +199,19 @@ def main():
                             horizontal_shift_pixels,
                             noise_pixels,
                             )
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
     im.putdata(pixels)
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
 
     im.save(new_image_file)
+
     if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} save to [underline]{new_image_file}[/underline]")
+        print(f"{current_time()}{VERBOSE_STRING} SAVED TO [underline]{new_image_file}[/underline]"\
+                "[MAIN()]")
     else:
         print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
-
+    print(f"Finished: {current_time()}")
 if __name__ == "__main__":
     main()
