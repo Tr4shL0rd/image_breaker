@@ -1,6 +1,7 @@
 """module for manipulating image data in order for getting interesting results"""
 import random
 import argparse
+import os.path
 from typing import List
 from pathlib import Path
 from rich import print #pylint: disable=redefined-builtin
@@ -130,9 +131,11 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main():
     """Main entery point"""
-    
-    image_file = Path(args.image)#"image.jpg"
-    new_image_file = f"new_{image_file}"
+
+    image_file = Path(args.image).absolute()
+    image_path = image_file.parent
+    new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
+
     im = Image.open(image_file)#pylint: disable=invalid-name
 
     noise_pixels = noise(im)
