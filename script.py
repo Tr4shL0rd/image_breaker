@@ -12,7 +12,7 @@ def current_time():
     """returns current time"""
     return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
-VERSION = "0.5.4"
+VERSION = "0.5.5"
 
 VERBOSE_STRING = "[yellow][VERBOSE][/yellow]"
 
