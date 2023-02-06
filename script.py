@@ -20,6 +20,7 @@ CORRECT = "[green][*][/green]"
 DONE    = "[green][DONE][/green]"
 
 #TODO: maybe edit metadata to show what manipulation has been done to the image
+#TODO: allow multiple files to be given from command line and loop over each file
 
 parser = argparse.ArgumentParser(
                                 prog="dataMosh.py",
@@ -61,20 +62,20 @@ def noise(image:Image) -> List:
     _new_pixels = []
     for pixel in img_pixels:
         # RNG for adding or subtracting pixel brightness
-        pixel_brightness_rng = random.randint(1,2)  
+        pixel_brightness_rng = random.randint(1,2)
         # RNG to determine if a pixel should be manipulated
-        manipulate_pixel_rng = random.randint(1,50) 
+        manipulate_pixel_rng = random.randint(1,50)
         if manipulate_pixel_rng < 10:
             # Subtract or add random values from the color channels to create a "broken" pixel
             broken_pixel:tuple = (
                                 pixel[0] - random.randint(0,100)
-                                    if pixel_brightness_rng == 1 else 
+                                    if pixel_brightness_rng == 1 else
                                         pixel[0] + random.randint(0,100),
                                 pixel[1] - random.randint(0,100)
-                                    if pixel_brightness_rng == 1 else 
+                                    if pixel_brightness_rng == 1 else
                                         pixel[1] + random.randint(0,100),
                                 pixel[2] - random.randint(0,100)
-                                    if pixel_brightness_rng == 1 else 
+                                    if pixel_brightness_rng == 1 else
                                         pixel[2] + random.randint(0,100)
                                 )
         else:
@@ -133,7 +134,8 @@ def combine_pixels(*pixel_lists) -> List:
     """
     #exit()
     if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} LISTS OF PIXELS [COMBINE_PIXELS]")
+        print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)}\ "
+                                            "LISTS OF PIXELS [COMBINE_PIXELS]")
     else:
         print(f"{CORRECT} Combining pixels")
     combined_pixels = []
