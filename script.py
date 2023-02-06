@@ -134,7 +134,7 @@ def combine_pixels(*pixel_lists) -> List:
     """
     #exit()
     if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)}\ "
+        print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} "\
                                             "LISTS OF PIXELS [COMBINE_PIXELS]")
     else:
         print(f"{CORRECT} Combining pixels")
@@ -159,12 +159,13 @@ def main():
     image_path = image_file.parent
     if image_path == Path.cwd():
         # Default image output
-        new_image_file = Path(os.path.join(Path.cwd(), "output", f"new_{image_file.name}")) 
+        new_image_file = Path(os.path.join(Path.cwd(), "output", f"new_{image_file.name}"))
         if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: {new_image_file} [MAIN]")
+            print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: "\
+                                                            "{new_image_file} [MAIN]")
     else:
         new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
-    
+
     im = Image.open(image_file)#pylint: disable=invalid-name
 
     noise_pixels = noise(im)
