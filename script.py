@@ -15,12 +15,10 @@ VERBOSE_STRING = "[yellow][VERBOSE][/yellow]"
 
 CORRECT = "[green][*][/green]"
 DONE    = "[green][DONE][/green]"
+NOTICE  = "[yellow][!][/yellow]"
 
-#TODO: maybe edit metadata to show what manipulation has been done to the image
+#TODO: maybe edit metadata to show what manipulations has been done to the image
 #TODO: allow multiple files to be given from command line and loop over each file
-
-
-
 
 parser = argparse.ArgumentParser(
                                 prog="dataMosh.py",
@@ -219,12 +217,13 @@ def combine_pixels(*pixel_lists) -> List:
     return combined_pixels
 
 def main():
-
     """Main entery point"""
     if not args.quiet:
-        print(f"Starting: {current_time()}")
-
+        print(f"{current_time()} Starting")
+    
+    # path to image (image file included)
     image_file = Path(args.image).absolute()
+    # path to folder containing image file
     image_path = Path(image_file.parent)
     file_name = Path(f"new_{image_file.name}")
     if not image_file.exists():
@@ -236,16 +235,20 @@ def main():
             print(f"[red underline][WARNING] NO FILE EXTENSION GIVEN! "\
                 f"using \"{image_file.suffix}\"[/red underline]")
             file_name = f"{file_name}{image_file.suffix}"
-
+    
     default_path = Path(os.path.join(Path.cwd(), "output", file_name))
+    default_output_path = Path(os.path.join(Path.cwd(), "output"))
+    if not default_output_path.exists():
+        print(f"{NOTICE}Creating default output folder!")
+        os.makedirs(default_output_path)
     if image_path == Path.cwd() or args.default_path:
         new_image_file = default_path
         if args.verbose and not args.quiet:
             print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: "\
             f"{new_image_file} [MAIN()]")
     else:
-        new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
-
+        #new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
+        new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{image_file.name}"))
     im = Image.open(image_file)#pylint: disable=invalid-name
 
     noise_pixels = noise(im)
@@ -268,6 +271,6 @@ def main():
         else:
             print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
     if not args.quiet:
-        print(f"Finished: {current_time()}")
+        print(f"{current_time()} Finished")
 if __name__ == "__main__":
     main()
