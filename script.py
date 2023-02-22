@@ -1,13 +1,15 @@
 """module for manipulating image data in order for getting interesting results"""
+#!/usr/bin/env python3
+
 import random
 import argparse
 import os.path
 from datetime import datetime
 from typing import List
 from pathlib import Path
-from tqdm import tqdm
-from rich import print #pylint: disable=redefined-builtin
-from PIL import Image
+from tqdm import tqdm #pylint: disable=import-error
+from rich import print #pylint: disable=redefined-builtin, import-error
+from PIL import Image #pylint: disable=import-error
 
 VERSION = "0.6.0"
 
@@ -147,7 +149,8 @@ def shift(image:Image) -> List:
     """
     if not args.quiet:
         if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} ADDING PIXEL SHIFTING TO {image.filename} [SHIFT()]")
+            print(f"{current_time()}{VERBOSE_STRING} "\
+                    f"ADDING PIXEL SHIFTING TO {image.filename} [SHIFT()]")
         else:
             print(f"{CORRECT} Shifting pixels")
     width, height = image.size
@@ -158,7 +161,8 @@ def shift(image:Image) -> List:
                     total=height,
                     desc="shifting",
                     bar_format="{desc}: {percentage:3.0f}% |{bar}|",
-                    leave=False,
+                    leave=False, # removes the progress bar after finishing
+                    # Disables the progress bar if quiet
                     disable=args.no_progress or args.quiet):
         # Generate a random integer between 1 and 100
         manipulate_pixel_chance_rng = random.randint(1,100)
@@ -220,7 +224,7 @@ def main():
     """Main entery point"""
     if not args.quiet:
         print(f"{current_time()} Starting")
-    
+
     # path to image (image file included)
     image_file = Path(args.image).absolute()
     # path to folder containing image file
@@ -235,18 +239,23 @@ def main():
             print(f"[red underline][WARNING] NO FILE EXTENSION GIVEN! "\
                 f"using \"{image_file.suffix}\"[/red underline]")
             file_name = f"{file_name}{image_file.suffix}"
-    
+
+    # path to new image (image file included)
     default_path = Path(os.path.join(Path.cwd(), "output", file_name))
+    # path to output folder
     default_output_path = Path(os.path.join(Path.cwd(), "output"))
+    # creates a new default output folder if it isnt already there
     if not default_output_path.exists():
-        print(f"{NOTICE}Creating default output folder!")
+        print(f"{NOTICE} Creating default output folder!")
         os.makedirs(default_output_path)
+    # checks if working path is the same as image_path
     if image_path == Path.cwd() or args.default_path:
         new_image_file = default_path
         if args.verbose and not args.quiet:
             print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: "\
             f"{new_image_file} [MAIN()]")
     else:
+        # deciding if output should be a working dir or image dir
         #new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
         new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{image_file.name}"))
     im = Image.open(image_file)#pylint: disable=invalid-name
@@ -272,5 +281,8 @@ def main():
             print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
     if not args.quiet:
         print(f"{current_time()} Finished")
-if __name__ == "__main__":
-    main()
+try:
+    if __name__ == "__main__":
+        main()
+except KeyboardInterrupt:
+    print("Exiting...")
