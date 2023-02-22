@@ -7,9 +7,9 @@ import os.path
 from datetime import datetime
 from typing import List
 from pathlib import Path
-from tqdm import tqdm #pylint: disable=import-error
-from rich import print #pylint: disable=redefined-builtin, import-error
-from PIL import Image #pylint: disable=import-error
+from tqdm import tqdm # pylint: disable=import-error
+from rich import print # pylint: disable=redefined-builtin, import-error
+from PIL import Image
 
 VERSION = "0.6.0"
 
@@ -222,6 +222,9 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main():
     """Main entery point"""
+    if not args.image:
+        print("[red underline][WARNING][/red underline] [red underline]NO IMAGE PATH GIVEN![/red underline]")
+        exit()
     if not args.quiet:
         print(f"{current_time()} Starting")
 
@@ -231,7 +234,7 @@ def main():
     image_path = Path(image_file.parent)
     file_name = Path(f"new_{image_file.name}")
     if not image_file.exists():
-        print(f"[red underline][WARNING] FILE \"{image_file}\" WAS NOT FOUND[/red underline]")
+        print(f"[red underline][WARNING][/red underline] [red underline]FILE \"{image_file}\" WAS NOT FOUND[/red underline]")
         exit()
     if args.output_name:
         file_name = Path(args.output_name)
