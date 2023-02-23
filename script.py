@@ -24,6 +24,8 @@ NOTICE  = "[yellow][!][/yellow]"
 #TODO: maybe edit metadata to show what manipulations has been done to the image
 #TODO: allow multiple files to be given from command line and loop over each file
 
+#TODO: Duplicate Pixels
+
 parser = argparse.ArgumentParser(
                                 prog="dataMosh.py",
                                 description="image datamoshing",
@@ -136,18 +138,43 @@ def noise(image:Image) -> List:
             broken_pixel = (pixel[0],pixel[1],pixel[2])
         _new_pixels.append(broken_pixel)
     return _new_pixels
-
-def shift(image:Image) -> List:
+def duplicate(image:Image) -> List:
     """
-    Shifts the pixels of an image
+    Duplicates random pixels of an image
 
     PARAMS:
     -------
-        * image `Image`: input image
+        * image `Image`: Input image
 
     RETURNS:
     --------
-        * _new_pixels `list`: a list of shifted pixels
+        * _new_pixels `list`: A list of duplicated pixels
+    """
+
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} "\
+                    f"DUPLICATING PIXELS TO {image.filename} [DUPLICATE()]")
+        else:
+            print(f"{CORRECT} Duplicating pixels")
+
+    width, height = image.size
+    img_pixels = list(image.getdata()) # RGB data of each pixel
+    _new_pixels = []
+
+
+    return _new_pixels
+def shift(image:Image) -> List:
+    """
+    Shifts random pixels of an image
+
+    PARAMS:
+    -------
+        * image `Image`: Input image
+
+    RETURNS:
+    --------
+        * _new_pixels `list`: A list of shifted pixels
     """
     if not args.quiet:
         if args.verbose:
@@ -267,9 +294,11 @@ def main():
 
     noise_pixels = noise(im)
     shift_pixels = shift(im)
+    duplicated_pixels = duplicate(im)
     pixels = combine_pixels(
-                            shift_pixels,
                             noise_pixels,
+                            shift_pixels,
+                            #duplicated_pixels,
                             )
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
