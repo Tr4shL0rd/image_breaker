@@ -4,7 +4,6 @@
 import random
 import argparse
 import os.path
-import time
 from datetime import datetime
 from typing import List
 from pathlib import Path
