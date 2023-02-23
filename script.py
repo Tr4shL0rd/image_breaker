@@ -4,12 +4,16 @@
 import random
 import argparse
 import os.path
+import time
 from datetime import datetime
 from typing import List
 from pathlib import Path
 from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
 from PIL import Image
+
+#start_time = time.time()
+start_time = datetime.now()
 
 VERSION = "0.6.0"
 
@@ -283,7 +287,13 @@ def main():
         else:
             print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
     if not args.quiet:
-        print(f"{current_time()} Finished")
+        total_seconds = (datetime.now() - start_time).total_seconds()
+        hours, remaining_seconds = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remaining_seconds, 60)
+        print(f"{current_time()} Finished"
+                if not args.verbose else 
+                    f"{current_time()} Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
+
 try:
     if __name__ == "__main__":
         main()
