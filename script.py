@@ -11,7 +11,6 @@ from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
 from PIL import Image
 
-#start_time = time.time()
 start_time = datetime.now()
 
 VERSION = "0.6.0"
