@@ -13,17 +13,15 @@ from PIL import Image
 
 start_time = datetime.now()
 
-VERSION = "0.6.0"
-
 VERBOSE_STRING = "[yellow][VERBOSE][/yellow]"
 
 CORRECT = "[green][*][/green]"
 DONE    = "[green][DONE][/green]"
 NOTICE  = "[yellow][!][/yellow]"
 
+IMAGE_SIMULATION_SIZE = list(range(2795520))
 #TODO: maybe edit metadata to show what manipulations has been done to the image
 #TODO: allow multiple files to be given from command line and loop over each file
-#TODO: add a better way to write the TQDM progress bar, instead of repeatedly rewriting the same progress bar
 #TODO: add flags for each image filter
 
 
@@ -48,7 +46,7 @@ parser.add_argument(
                     "-d","--default-output",
                     dest="default_path",
                     action="store_true",
-                    help="force output to the default location"
+                    help="[!DEPRECATED!] force output to the default location"
                     )
 parser.add_argument(
                     "--no-progress",
@@ -68,6 +66,12 @@ parser.add_argument(
                     action="store",
                     help="name of the file outputted"
                     )
+parser.add_argument(
+                    "-s","--simulate",
+                    dest="simulate",
+                    action="store_true",
+                    help="[!NOT YET IMPLEMENTED!] Simulates working on an image"
+                    )
 args = parser.parse_args()
 
 class TqdmWrapper:
@@ -76,13 +80,22 @@ class TqdmWrapper:
         self.desc = desc
         self.total = total
         self.disable = disable or quiet
-
+        self.bar_styles = {
+            "builder": " ▖▘▝▗▚▞█",
+            "fade": "░▒█",
+            "arrow": " >=",
+        }
     def __enter__(self):
         self.pbar = tqdm(
             total=self.total,
             desc=self.desc,
-            bar_format="{desc}: {percentage:3.0f}% |{bar}|",
-            leave=not False,
+            ascii=self.bar_styles["fade"],
+            bar_format="{desc}: {percentage:3.0f}% |{bar}| ETA: [{remaining}]"
+                    if not args.verbose else
+                        "{l_bar}{bar}| [{n_fmt}/{total_fmt} Total Iterations "\
+                        "| {rate_fmt} | ETA: {eta:%y-%m-%d %H:%M}{postfix} "\
+                        "| ETR: {remaining}]",
+            leave=args.verbose,#False if not args.verbose else True,
             disable=self.disable
         )
         return self.pbar
@@ -231,7 +244,7 @@ def duplicate(image: Image, grid_size:int=4, chance:int|None=None) -> List:
             print(f"{CORRECT} Duplicating pixels")
 
     width, height = image.size
-    img_pixels = list(image.getdata())  # RGB data of each pixel
+    img_pixels = list(image.getdata()) # RGB data of each pixel
     
     _new_pixels = []
     #grid_size = None if not grid_size else 4 
@@ -338,10 +351,9 @@ def main():
         #new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
         new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{image_file.name}"))
     im = Image.open(image_file)#pylint: disable=invalid-name
-
-    noise_pixels      = noise(im)
+    #noise_pixels      = noise(im)
     shift_pixels      = shift(im)
-    duplicated_pixels = duplicate(im)
+    #duplicated_pixels = duplicate(im)
     pixels = combine_pixels(
                             #noise_pixels,
                             shift_pixels,
@@ -356,7 +368,7 @@ def main():
 
     if not args.quiet:
         if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} SAVED TO"\
+            print(f"{current_time()}{VERBOSE_STRING} SAVED TO "\
                 f"[underline]{new_image_file}[/underline] [MAIN()]")
         else:
             print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
