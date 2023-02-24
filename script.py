@@ -23,8 +23,8 @@ NOTICE  = "[yellow][!][/yellow]"
 
 #TODO: maybe edit metadata to show what manipulations has been done to the image
 #TODO: allow multiple files to be given from command line and loop over each file
+#TODO: add a better way to write the TQDM progress bar, instead of repeatedly rewriting the same progress bar
 
-#TODO: Duplicate Pixels
 
 parser = argparse.ArgumentParser(
                                 prog="dataMosh.py",
@@ -81,6 +81,10 @@ def current_time(just_time=False,just_date=False) -> str:
     RETURNS:
     -------
         * returns the date and or time
+
+    NOTE:
+    -----
+        * If both bools are False or True, both time and date are returned
     """
     if just_time:
         return datetime.now().strftime("[%H:%M:%S]")
@@ -109,6 +113,7 @@ def noise(image:Image) -> List:
         else:
             print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
+    
     _new_pixels = []
     for pixel in tqdm(
                     img_pixels,
@@ -138,32 +143,7 @@ def noise(image:Image) -> List:
             broken_pixel = (pixel[0],pixel[1],pixel[2])
         _new_pixels.append(broken_pixel)
     return _new_pixels
-def duplicate(image:Image) -> List:
-    """
-    Duplicates random pixels of an image
 
-    PARAMS:
-    -------
-        * image `Image`: Input image
-
-    RETURNS:
-    --------
-        * _new_pixels `list`: A list of duplicated pixels
-    """
-
-    if not args.quiet:
-        if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} "\
-                    f"DUPLICATING PIXELS TO {image.filename} [DUPLICATE()]")
-        else:
-            print(f"{CORRECT} Duplicating pixels")
-
-    width, height = image.size
-    img_pixels = list(image.getdata()) # RGB data of each pixel
-    _new_pixels = []
-
-
-    return _new_pixels
 def shift(image:Image) -> List:
     """
     Shifts random pixels of an image
@@ -207,6 +187,67 @@ def shift(image:Image) -> List:
                 _new_pixels.append(img_pixels[new_y * width + new_x])
             else:
                 # Append the original pixel to the new_pixels list
+                _new_pixels.append(img_pixels[_y * width + _x])
+    return _new_pixels
+
+def duplicate(image: Image, grid_size:int=4, chance:int|None=None) -> List:
+    """
+    CURRENTLY DOESNT WORK ALONE, OTHER FUNCTIONS MUST BE PASSED TO COMBINE_PIXELS ALONGSIDE THIS ONE!
+    Duplicates random NxN grid of pixels of an image and places them at a random location
+    
+    PARAMS:
+    -------
+        * image `Image`: Input image
+
+    RETURNS:
+    --------
+        * _new_pixels `list`: A list of duplicated pixels
+
+    NOTE:
+    -----
+        * the bigger the grid_size the longer the function takes
+
+    
+    """
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} "
+                    f"DUPLICATING PIXELS TO {image.filename} [DUPLICATE()]")
+        else:
+            print(f"{CORRECT} Duplicating pixels")
+
+    width, height = image.size
+    img_pixels = list(image.getdata())  # RGB data of each pixel
+    
+    _new_pixels = []
+    #grid_size = None if not grid_size else 4 
+    if grid_size is None:
+        grid_size = 4
+    if chance is None:
+        chance = 5
+
+    for _y in tqdm(
+                    range(height),
+                    total=height,
+                    desc="duplicating",
+                    bar_format="{desc}: {percentage:3.0f}% |{bar}|",
+                    leave=False,  # removes the progress bar after finishing
+                    # Disables the progress bar if quiet
+                    disable=args.no_progress or args.quiet):
+
+        for _x in range(width):
+            manipulate_pixel_chance_rng = random.randint(1, 100)
+            # checks if the pixels is to be duplicated
+            if manipulate_pixel_chance_rng < chance:
+                # Generate a random integer between 0 and the width-grid_size of the image
+                x_start_rng = random.randint(0, width  - grid_size)
+                y_start_rng = random.randint(height//2, height - grid_size)
+                for new_y in range(y_start_rng,     y_start_rng + grid_size):
+                    for new_x in range(x_start_rng, x_start_rng + grid_size):
+                        # Append the duplicated pixel to the new_pixels list
+                        _new_pixels.append(img_pixels[new_y * width + new_x])
+            else:
+                #pass
                 _new_pixels.append(img_pixels[_y * width + _x])
     return _new_pixels
 
@@ -292,13 +333,13 @@ def main():
         new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{image_file.name}"))
     im = Image.open(image_file)#pylint: disable=invalid-name
 
-    noise_pixels = noise(im)
-    shift_pixels = shift(im)
+    noise_pixels      = noise(im)
+    shift_pixels      = shift(im)
     duplicated_pixels = duplicate(im)
     pixels = combine_pixels(
                             noise_pixels,
                             shift_pixels,
-                            #duplicated_pixels,
+                            duplicated_pixels,
                             )
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
