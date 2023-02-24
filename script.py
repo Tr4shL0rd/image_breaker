@@ -71,6 +71,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 class TqdmWrapper:
+    """Wrapper class for the tqdm progress bar"""
     def __init__(self, desc="shifting", total=None, disable=False, quiet=False):
         self.desc = desc
         self.total = total
@@ -81,7 +82,7 @@ class TqdmWrapper:
             total=self.total,
             desc=self.desc,
             bar_format="{desc}: {percentage:3.0f}% |{bar}|",
-            leave=False,
+            leave=not False,
             disable=self.disable
         )
         return self.pbar
