@@ -9,8 +9,9 @@ from typing import List
 from pathlib import Path
 from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
-from PIL import Image, ImageChops
-
+from PIL import Image, ImageChops, ImageOps
+import numpy as np
+import math
 
 start_time = datetime.now()
 
@@ -104,6 +105,24 @@ class TqdmWrapper:
     def __exit__(self, exc_type, exc_value, traceback):
         self.pbar.close()
 
+def rng(min:int,max:int):
+    """
+    returns a random int between min and max
+
+    PARAMS:
+    -------
+        * min `int`: min number
+        * max `int`: max number
+
+    RETURNS:
+    -------
+        * returns a random int
+
+    """
+    if not min:
+        min = 0
+    return random.randint(min,max)
+    
 def current_time(just_time=False,just_date=False) -> str:
     """
     returns current time
@@ -179,7 +198,6 @@ def noise(image:Image, intensity:int = 10) -> List:
             pbar.update(1)
     return _new_pixels
 
-
 def shift(image:Image, intensity:int=10) -> List:
     """
     Shifts random pixels of an image
@@ -225,8 +243,6 @@ def shift(image:Image, intensity:int=10) -> List:
                     _new_pixels.append(img_pixels[_y * width + _x])
             pbar.update(1)
     return _new_pixels
-
-
 
 def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
     """
@@ -283,7 +299,6 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
             pbar.update(1)
     return _new_pixels
 
-
 def chromatic_aberration(image: Image, shift_size: int = 1) -> List:
     """
     Shifts the color channels of an image to create chromatic aberration.
@@ -296,30 +311,90 @@ def chromatic_aberration(image: Image, shift_size: int = 1) -> List:
     RETURNS:
     --------
         * _new_pixels `list`: List of shifted pixels.
+    NOTE:
+    _____
+        * If shift_size is 0 it will be a random distance in any direction. 
     """
 
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
                     f"ADDING CHROMATIC ABERRATION TO {image.filename} "\
-                    f"[CHROMATIC_ABERRATION(image={image.filename},{shift_size=})]")
+                    f"[CHROMATIC_ABERRATION(image={image.filename}, {shift_size=})]")
         else:
             print(f"{CORRECT} Adding chromatic aberration")
 
     # Split the image into its color channels.
     red, green, blue = image.split()
-
-    # Shift the color channels in different directions.
-    red_shifted   = ImageChops.offset(red, shift_size, shift_size)
-    green_shifted = ImageChops.offset(green, 0, -shift_size)
-    blue_shifted  = ImageChops.offset(blue, -shift_size, 0)
-
+    if shift_size:
+        # Shift the color channels in different directions.
+        red_shifted   = ImageChops.offset(red, shift_size, shift_size)
+        green_shifted = ImageChops.offset(green, 0, -shift_size)
+        blue_shifted  = ImageChops.offset(blue, -shift_size, 0)
+    else:
+        shift_size = random.randint(1,100)
+        red_shifted   = ImageChops.offset(red, rng(1,255), rng(1,255))
+        green_shifted = ImageChops.offset(green, rng(1,100), -rng(1,255))
+        blue_shifted  = ImageChops.offset(blue, -rng(1,255), rng(1,100))
+    
     # Merge the shifted color channels back into an image.
     shifted_image = Image.merge("RGB", (red_shifted, green_shifted, blue_shifted))
 
     # Get the pixels of the shifted image.
     _new_pixels = list(shifted_image.getdata())
 
+    return _new_pixels
+
+def vignette(image: Image, intensity: int = 1):
+    """
+    Adds a vignette to a picture
+
+    PARAMS:
+    -------
+        * image `Image`: Input image.
+        * intensity `int`: Number of pixels to shift the color channels. Defaults to 10.
+
+    RETURNS:
+    --------
+        * _new_pixels `list`: List of shifted pixels.
+    """
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} "\
+                    f"ADDING VIGNETTE TO {image.filename} "\
+                    f"[VIGNETTE(image={image.filename}, {intensity=})]")
+        else:
+            print(f"{CORRECT} Adding Vignette")
+
+    width, height = image.size
+    pixels = list(image.getdata())
+    new_intensity = min(intensity, 100)
+    if intensity == 0:
+        return pixels
+    _new_pixels = []
+    with TqdmWrapper(
+                    desc="Adding vignette",
+                    total=height,
+                    disable=args.no_progress or args.quiet
+                    ) as pbar:
+        for y in range(height):
+            for x in range(width):
+                pixel = pixels[y * width + x]
+                distance = math.sqrt((x - width / 2) ** 2 + (y - height / 2) ** 2)
+                intensity_factor = 1 - (distance / (math.sqrt((width / 2) ** 2 + (height / 2) ** 2)))
+                new_pixel = (
+                    int(pixel[0] * new_intensity / intensity),
+                    int(pixel[1] * new_intensity / intensity),
+                    int(pixel[2] * new_intensity / intensity),
+                            )
+
+                new_pixel = (
+                    int(new_pixel[0] * intensity_factor),
+                    int(new_pixel[1] * intensity_factor),
+                    int(new_pixel[2] * intensity_factor),
+                            )
+                _new_pixels.append(new_pixel)
+            pbar.update(1)
     return _new_pixels
 
 
@@ -333,6 +408,7 @@ def combine_pixels(*pixel_lists) -> List:
     --------
         * combined_pixels `list`: a list of combined pixels
     """
+
     if not args.quiet:
         if len(pixel_lists) == 0:
             print("[red underline][WARNING][/red underline] "\
@@ -412,32 +488,35 @@ def main():
     shift_pixels                = shift(im)
     duplicated_pixels           = duplicate(im)
     noise_pixels                = noise(im, intensity=10)
-    chromatic_aberration_pixels = chromatic_aberration(im,shift_size=20)
+    chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
+    vignette_pixels             = vignette(im, intensity=100)
 
     pixels = combine_pixels(
+                            vignette_pixels,
                             shift_pixels,
                             duplicated_pixels,
                             noise_pixels,
-                            chromatic_aberration_pixels
+                            chromatic_aberration_pixels,
                             )
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
     im.putdata(pixels)
+    if args.verbose and not args.quiet:
+        print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
     im.save(new_image_file)
 
-    if not args.quiet:
-        if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} SAVED TO "\
-                f"[underline]{new_image_file}[/underline] [MAIN()]")
-        else:
-            print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
-    if not args.quiet:
+    #if args.quiet:
+    #    pass
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} SAVED TO [underline]{new_image_file}[/underline] [MAIN()]")
         total_seconds = (datetime.now() - start_time).total_seconds()
         hours, remaining_seconds = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remaining_seconds, 60)
-        print(f"\n{current_time()} [underline]Finished[/underline]"
-                if not args.verbose else
-                    f"\n{current_time()} Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
+        print(f"\n{current_time()}{VERBOSE_STRING} Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
+    else:
+        print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
+        print(f"\n{current_time()} Finished")
+
 
 try:
     if __name__ == "__main__":
