@@ -175,21 +175,21 @@ def noise(image:Image, intensity:int = 10) -> List:
                     ) as pbar:
         for pixel in img_pixels:
             # RNG for adding or subtracting pixel brightness
-            pixel_brightness_rng = random.randint(1,2)
+            pixel_brightness_rng = rng(1,2)
             # RNG to determine if a pixel should be manipulated
-            manipulate_pixel_rng = random.randint(1,100)
+            manipulate_pixel_rng = rng(1,100)
             if manipulate_pixel_rng < intensity:
                 # Subtract or add random values from the color channels to create a "broken" pixel
                 broken_pixel:tuple = (
-                                    pixel[0] - random.randint(0,100)
+                                    pixel[0] - rng(0,100)
                                         if pixel_brightness_rng == 1 else
-                                            pixel[0] + random.randint(0,100),
-                                    pixel[1] - random.randint(0,100)
+                                            pixel[0] + rng(0,100),
+                                    pixel[1] - rng(0,100)
                                         if pixel_brightness_rng == 1 else
-                                            pixel[1] + random.randint(0,100),
-                                    pixel[2] - random.randint(0,100)
+                                            pixel[1] + rng(0,100),
+                                    pixel[2] - rng(0,100)
                                         if pixel_brightness_rng == 1 else
-                                            pixel[2] + random.randint(0,100)
+                                            pixel[2] + rng(0,100)
                                     )
             else:
                 broken_pixel = (pixel[0],pixel[1],pixel[2])
@@ -226,9 +226,9 @@ def shift(image:Image, intensity:int=10) -> List:
                     ) as pbar:
         for _y in range(height):
             # Generate a random integer between 1 and 100
-            manipulate_pixel_chance_rng = random.randint(1,100)
+            manipulate_pixel_chance_rng = rng(1,100)
             # Generate a random integer between 0 and the width of the image
-            shift_distance_rng = random.randint(0,width)
+            shift_distance_rng = rng(0,width)
             for _x in range(width):
                 # checks if the pixels is to be shifted
                 if manipulate_pixel_chance_rng < intensity:
@@ -282,12 +282,12 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
                     ) as pbar:
         for _y in range(height):
             for _x in range(width):
-                manipulate_pixel_chance_rng = random.randint(1, 100)
+                manipulate_pixel_chance_rng = rng(1, 100)
                 # checks if the pixels is to be duplicated
                 if manipulate_pixel_chance_rng < chance:
                     # Generate a random integer between 0 and the width-grid_size of the image
-                    x_start_rng = random.randint(0, width  - grid_size)
-                    y_start_rng = random.randint(height//2, height - grid_size)
+                    x_start_rng = rng(0, width  - grid_size)
+                    y_start_rng = rng(height//2, height - grid_size)
                     for new_y in range(y_start_rng,     y_start_rng + grid_size):
                         for new_x in range(x_start_rng, x_start_rng + grid_size):
                             # Append the duplicated pixel to the new_pixels list
@@ -331,7 +331,7 @@ def chromatic_aberration(image: Image, shift_size: int = 1) -> List:
         green_shifted = ImageChops.offset(green, 0, -shift_size)
         blue_shifted  = ImageChops.offset(blue, -shift_size, 0)
     else:
-        shift_size = random.randint(1,100)
+        shift_size = rng(1,100)
         red_shifted   = ImageChops.offset(red, rng(1,255), rng(1,255))
         green_shifted = ImageChops.offset(green, rng(1,100), -rng(1,255))
         blue_shifted  = ImageChops.offset(blue, -rng(1,255), rng(1,100))
