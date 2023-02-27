@@ -261,8 +261,6 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
     NOTE:
     -----
         * the bigger the grid_size the longer the function takes
-
-    
     """
     if not args.quiet:
         if args.verbose:
@@ -273,7 +271,7 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
 
     width, height = image.size
     img_pixels = list(image.getdata()) # RGB data of each pixel
-    
+
     _new_pixels = []
     with TqdmWrapper(
                     desc="Duplicating",
@@ -293,7 +291,6 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
                             # Append the duplicated pixel to the new_pixels list
                             _new_pixels.append(img_pixels[new_y * width + new_x])
                 else:
-                    #pass
                     _new_pixels.append(img_pixels[_y * width + _x])
             pbar.update(1)
     return _new_pixels
@@ -378,15 +375,19 @@ def vignette(image: Image, intensity: int = 1):
                     ) as pbar:
         for y in range(height):
             for x in range(width):
+                # current pixel value
                 pixel = pixels[y * width + x]
+                # distance to center from current pixel
                 distance = math.sqrt((x - width / 2) ** 2 + (y - height / 2) ** 2)
+                # intensity factor based on the distance from the center
                 intensity_factor = 1 - (distance / (math.sqrt((width / 2) ** 2 + (height / 2) ** 2)))
+                # adds intensity factor to the pixel values
                 new_pixel = (
                     int(pixel[0] * new_intensity / intensity),
                     int(pixel[1] * new_intensity / intensity),
                     int(pixel[2] * new_intensity / intensity),
                             )
-
+                # adds vignette by multiplying the pixel values by the intensity factor
                 new_pixel = (
                     int(new_pixel[0] * intensity_factor),
                     int(new_pixel[1] * intensity_factor),
