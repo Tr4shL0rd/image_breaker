@@ -77,7 +77,7 @@ args = parser.parse_args()
 
 class TqdmWrapper:
     """Wrapper class for the tqdm progress bar"""
-    def __init__(self, desc="shifting", total=None, disable=False, quiet=False):
+    def __init__(self, desc="DESC MISSING", total=None, disable=False, quiet=False):
         self.desc = desc
         self.total = total
         self.disable = disable or quiet
@@ -143,13 +143,18 @@ def noise(image:Image, intensity:int = 10) -> List:
     """
     if not args.quiet:
         if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} [NOISE(image={image.filename}, {intensity=})]")
+            print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} "\
+                    f"[NOISE(image={image.filename}, {intensity=})]")
         else:
             print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
     _new_pixels = []
     #for pixel in tqdm(img_pixels,total=len(img_pixels),desc="Adding noise",bar_format="{desc}: {percentage:3.0f}% |{bar}|",leave=False,disable=args.no_progress or args.quiet):
-    with TqdmWrapper(desc="Adding Noise", total=len(img_pixels), disable=args.no_progress or args.quiet) as pbar:
+    with TqdmWrapper(
+                    desc="Adding Noise",
+                    total=len(img_pixels),
+                    disable=args.no_progress or args.quiet
+                    ) as pbar:
         for pixel in img_pixels:
             # RNG for adding or subtracting pixel brightness
             pixel_brightness_rng = random.randint(1,2)
@@ -197,8 +202,11 @@ def shift(image:Image, intensity:int=10) -> List:
     width, height = image.size
     img_pixels = list(image.getdata()) # RGB data of each pixel
     _new_pixels = []
-    #for _y in tqdm(range(height),total=height,desc="shifting",bar_format="{desc}: {percentage:3.0f}% |{bar}|",leave=False, # removes the progress bar after finishing# Disables the progress bar if quietdisable=args.no_progress or args.quiet):
-    with TqdmWrapper(desc="Shifting", total=height, disable=args.no_progress or args.quiet) as pbar:
+    with TqdmWrapper(
+                    desc="Shifting",
+                    total=height,
+                    disable=args.no_progress or args.quiet
+                    ) as pbar:
         for _y in range(height):
             # Generate a random integer between 1 and 100
             manipulate_pixel_chance_rng = random.randint(1,100)
@@ -252,10 +260,11 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
     img_pixels = list(image.getdata()) # RGB data of each pixel
     
     _new_pixels = []
-    #grid_size = None if not grid_size else 4 
-    
-    #for _y in tqdm(range(height),total=height,desc="duplicating",bar_format="{desc}: {percentage:3.0f}% |{bar}|",leave=False,  # removes the progress bar after finishing# Disables the progress bar if quietdisable=args.no_progress or args.quiet):
-    with TqdmWrapper(desc="Duplicating", total=height, disable=args.no_progress or args.quiet) as pbar:
+    with TqdmWrapper(
+                    desc="Duplicating",
+                    total=height,
+                    disable=args.no_progress or args.quiet
+                    ) as pbar:
         for _y in range(height):
             for _x in range(width):
                 manipulate_pixel_chance_rng = random.randint(1, 100)
@@ -288,18 +297,15 @@ def chromatic_aberration(image: Image, shift_size: int = 1) -> List:
     --------
         * _new_pixels `list`: List of shifted pixels.
     """
-    #if not isinstance(image, Image.Image):
-    #    raise ValueError("Input image must be an instance of the Image class.")
-    #if not isinstance(shift_size, int):
-    #    raise ValueError("Shift size must be an integer.")
-    
+
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
-                    f"ADDING CHROMATIC ABERRATION TO {image.filename} [CHROMATIC_ABERRATION(image={image.filename},{shift_size=})]")
+                    f"ADDING CHROMATIC ABERRATION TO {image.filename} "\
+                    f"[CHROMATIC_ABERRATION(image={image.filename},{shift_size=})]")
         else:
             print(f"{CORRECT} Adding chromatic aberration")
-    
+
     # Split the image into its color channels.
     red, green, blue = image.split()
 
@@ -329,7 +335,8 @@ def combine_pixels(*pixel_lists) -> List:
     """
     if not args.quiet:
         if len(pixel_lists) == 0:
-            print(f"[red underline][WARNING][/red underline] [red underline]NO PIXEL LISTS HAVE BEEN GIVEN![/red underline]")
+            print("[red underline][WARNING][/red underline] "\
+                    "[red underline]NO PIXEL LISTS HAVE BEEN GIVEN![/red underline]")
             exit()
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} "\
@@ -337,8 +344,11 @@ def combine_pixels(*pixel_lists) -> List:
         else:
             print(f"{CORRECT} Combining pixels")
     combined_pixels = []
-    #for img_pixels in tqdm(zip(*pixel_lists),desc="combining pixels",total=len(pixel_lists[0]),bar_format="{desc}:{percentage:3.0f}% |{bar}|",leave=False,disable=args.no_progress or args.quiet):
-    with TqdmWrapper(desc="Combining Pixels", total=len(pixel_lists[0]), disable=args.no_progress or args.quiet) as pbar:
+    with TqdmWrapper(
+                    desc="Combining Pixels",
+                    total=len(pixel_lists[0]),
+                    disable=args.no_progress or args.quiet
+                    ) as pbar:
         for img_pixels in zip(*pixel_lists):
             combined_pixel = [0, 0, 0]
             # Loop over the pixels and add the corresponding color channels
@@ -357,7 +367,8 @@ def combine_pixels(*pixel_lists) -> List:
 def main():
     """Main entery point"""
     if not args.image:
-        print("[red underline][WARNING][/red underline] [red underline]NO IMAGE PATH GIVEN![/red underline]")
+        print("[red underline][WARNING][/red underline] "\
+                f"[red underline]NO IMAGE PATH GIVEN![/red underline]")
         exit()
     if not args.quiet:
         print(f"{current_time()} Starting")
@@ -368,7 +379,8 @@ def main():
     image_path = Path(image_file.parent)
     file_name = Path(f"new_{image_file.name}")
     if not image_file.exists():
-        print(f"[red underline][WARNING][/red underline] [red underline]FILE \"{image_file}\" WAS NOT FOUND[/red underline]")
+        print(f"[red underline][WARNING][/red underline] "\
+                f"[red underline]FILE \"{image_file}\" WAS NOT FOUND[/red underline]")
         exit()
     if args.output_name:
         file_name = Path(args.output_name)
@@ -396,12 +408,12 @@ def main():
         #new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
         new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{image_file.name}"))
     im = Image.open(image_file)#pylint: disable=invalid-name
-    
+
     shift_pixels                = shift(im)
     duplicated_pixels           = duplicate(im)
     noise_pixels                = noise(im, intensity=10)
-    chromatic_aberration_pixels = chromatic_aberration(im,20)
-    
+    chromatic_aberration_pixels = chromatic_aberration(im,shift_size=20)
+
     pixels = combine_pixels(
                             shift_pixels,
                             duplicated_pixels,
@@ -411,8 +423,6 @@ def main():
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
     im.putdata(pixels)
-    #if args.verbose and not args.quiet:
-    #    print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
     im.save(new_image_file)
 
     if not args.quiet:
@@ -425,9 +435,9 @@ def main():
         total_seconds = (datetime.now() - start_time).total_seconds()
         hours, remaining_seconds = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remaining_seconds, 60)
-        print(f"{current_time()} Finished"
+        print(f"\n{current_time()} [underline]Finished[/underline]"
                 if not args.verbose else
-                    f"{current_time()} Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
+                    f"\n{current_time()} Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
 
 try:
     if __name__ == "__main__":
