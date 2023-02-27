@@ -9,8 +9,7 @@ from typing import List
 from pathlib import Path
 from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
-from PIL import Image, ImageChops, ImageOps
-import numpy as np
+from PIL import Image, ImageChops
 import math
 
 start_time = datetime.now()
