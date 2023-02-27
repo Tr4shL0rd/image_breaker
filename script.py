@@ -9,7 +9,8 @@ from typing import List
 from pathlib import Path
 from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
-from PIL import Image
+from PIL import Image, ImageChops
+
 
 start_time = datetime.now()
 
@@ -129,25 +130,23 @@ def current_time(just_time=False,just_date=False) -> str:
     else:
         return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
-def noise(image:Image) -> List:
+def noise(image:Image, intensity:int = 10) -> List:
     """
     Adds pseudo noise to an image
-
     PARAMS:
     -------
-        * image `Image`: an instance of the Image class
-
+        * image `Image`: Input image
+        * intensity `int`: Noise intensity
     RETURNS:
     --------
         * _new_pixels `list`: a list of pixels with added noise
     """
     if not args.quiet:
         if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} [NOISE()]")
+            print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} [NOISE(image={image.filename}, {intensity=})]")
         else:
             print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
-    
     _new_pixels = []
     #for pixel in tqdm(img_pixels,total=len(img_pixels),desc="Adding noise",bar_format="{desc}: {percentage:3.0f}% |{bar}|",leave=False,disable=args.no_progress or args.quiet):
     with TqdmWrapper(desc="Adding Noise", total=len(img_pixels), disable=args.no_progress or args.quiet) as pbar:
@@ -155,8 +154,8 @@ def noise(image:Image) -> List:
             # RNG for adding or subtracting pixel brightness
             pixel_brightness_rng = random.randint(1,2)
             # RNG to determine if a pixel should be manipulated
-            manipulate_pixel_rng = random.randint(1,50)
-            if manipulate_pixel_rng < 10:
+            manipulate_pixel_rng = random.randint(1,100)
+            if manipulate_pixel_rng < intensity:
                 # Subtract or add random values from the color channels to create a "broken" pixel
                 broken_pixel:tuple = (
                                     pixel[0] - random.randint(0,100)
@@ -175,13 +174,15 @@ def noise(image:Image) -> List:
             pbar.update(1)
     return _new_pixels
 
-def shift(image:Image) -> List:
+
+def shift(image:Image, intensity:int=10) -> List:
     """
     Shifts random pixels of an image
 
     PARAMS:
     -------
         * image `Image`: Input image
+        * intensity `int`: Shifting intensity
 
     RETURNS:
     --------
@@ -190,7 +191,7 @@ def shift(image:Image) -> List:
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
-                    f"ADDING PIXEL SHIFTING TO {image.filename} [SHIFT()]")
+                    f"ADDING PIXEL SHIFTING TO {image.filename} [SHIFT(image={image.filename}, {intensity=})]")
         else:
             print(f"{CORRECT} Shifting pixels")
     width, height = image.size
@@ -205,7 +206,7 @@ def shift(image:Image) -> List:
             shift_distance_rng = random.randint(0,width)
             for _x in range(width):
                 # checks if the pixels is to be shifted
-                if manipulate_pixel_chance_rng < 10:
+                if manipulate_pixel_chance_rng < intensity:
                     # Calculate the new x and y positions for the shifted pixel
                     new_x = (_x + shift_distance_rng) % width
                     new_y = (_y + shift_distance_rng) % height
@@ -217,7 +218,9 @@ def shift(image:Image) -> List:
             pbar.update(1)
     return _new_pixels
 
-def duplicate(image: Image, grid_size:int=4, chance:int|None=None) -> List:
+
+
+def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
     """
     CURRENTLY DOESNT WORK ALONE, OTHER FUNCTIONS MUST BE PASSED TO COMBINE_PIXELS ALONGSIDE THIS ONE!
     Duplicates random NxN grid of pixels of an image and places them at a random location
@@ -225,6 +228,8 @@ def duplicate(image: Image, grid_size:int=4, chance:int|None=None) -> List:
     PARAMS:
     -------
         * image `Image`: Input image
+        * grid_size `int`: Size of the grid to be shifted. Defaults to 4
+        * chance `int`: Chance of a pixel to be shifted. Defaults to 5
 
     RETURNS:
     --------
@@ -239,7 +244,7 @@ def duplicate(image: Image, grid_size:int=4, chance:int|None=None) -> List:
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "
-                    f"DUPLICATING PIXELS TO {image.filename} [DUPLICATE()]")
+                    f"DUPLICATING PIXELS TO {image.filename} [DUPLICATE(image={image.filename}, {grid_size=}, {chance=})]")
         else:
             print(f"{CORRECT} Duplicating pixels")
 
@@ -248,11 +253,7 @@ def duplicate(image: Image, grid_size:int=4, chance:int|None=None) -> List:
     
     _new_pixels = []
     #grid_size = None if not grid_size else 4 
-    if grid_size is None:
-        grid_size = 4
-    if chance is None:
-        chance = 5
-
+    
     #for _y in tqdm(range(height),total=height,desc="duplicating",bar_format="{desc}: {percentage:3.0f}% |{bar}|",leave=False,  # removes the progress bar after finishing# Disables the progress bar if quietdisable=args.no_progress or args.quiet):
     with TqdmWrapper(desc="Duplicating", total=height, disable=args.no_progress or args.quiet) as pbar:
         for _y in range(height):
@@ -273,19 +274,63 @@ def duplicate(image: Image, grid_size:int=4, chance:int|None=None) -> List:
             pbar.update(1)
     return _new_pixels
 
-def combine_pixels(*pixel_lists) -> List:
+
+def chromatic_aberration(image: Image, shift_size: int = 1) -> List:
     """
-    Combines lists of pixels into one list
+    Shifts the color channels of an image to create chromatic aberration.
 
     PARAMS:
     -------
-        * *pixel_lists `list`: variable number of lists of pixels
+        * image `Image`: Input image.
+        * shift_size `int`: Number of pixels to shift the color channels. Defaults to 10.
 
+    RETURNS:
+    --------
+        * _new_pixels `list`: List of shifted pixels.
+    """
+    #if not isinstance(image, Image.Image):
+    #    raise ValueError("Input image must be an instance of the Image class.")
+    #if not isinstance(shift_size, int):
+    #    raise ValueError("Shift size must be an integer.")
+    
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} "\
+                    f"ADDING CHROMATIC ABERRATION TO {image.filename} [CHROMATIC_ABERRATION(image={image.filename},{shift_size=})]")
+        else:
+            print(f"{CORRECT} Adding chromatic aberration")
+    
+    # Split the image into its color channels.
+    red, green, blue = image.split()
+
+    # Shift the color channels in different directions.
+    red_shifted   = ImageChops.offset(red, shift_size, shift_size)
+    green_shifted = ImageChops.offset(green, 0, -shift_size)
+    blue_shifted  = ImageChops.offset(blue, -shift_size, 0)
+
+    # Merge the shifted color channels back into an image.
+    shifted_image = Image.merge("RGB", (red_shifted, green_shifted, blue_shifted))
+
+    # Get the pixels of the shifted image.
+    _new_pixels = list(shifted_image.getdata())
+
+    return _new_pixels
+
+
+def combine_pixels(*pixel_lists) -> List:
+    """
+    Combines lists of pixels into one list
+    PARAMS:
+    -------
+        * *pixel_lists `list`: variable number of lists of pixels
     RETURNS:
     --------
         * combined_pixels `list`: a list of combined pixels
     """
     if not args.quiet:
+        if len(pixel_lists) == 0:
+            print(f"[red underline][WARNING][/red underline] [red underline]NO PIXEL LISTS HAVE BEEN GIVEN![/red underline]")
+            exit()
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} COMBINING {len(pixel_lists)} "\
                                                 "LISTS OF PIXELS [COMBINE_PIXELS()]")
@@ -351,19 +396,23 @@ def main():
         #new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
         new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{image_file.name}"))
     im = Image.open(image_file)#pylint: disable=invalid-name
-    #noise_pixels      = noise(im)
-    shift_pixels      = shift(im)
-    #duplicated_pixels = duplicate(im)
+    
+    shift_pixels                = shift(im)
+    duplicated_pixels           = duplicate(im)
+    noise_pixels                = noise(im, intensity=10)
+    chromatic_aberration_pixels = chromatic_aberration(im,20)
+    
     pixels = combine_pixels(
-                            #noise_pixels,
                             shift_pixels,
-                            #duplicated_pixels,
+                            duplicated_pixels,
+                            noise_pixels,
+                            chromatic_aberration_pixels
                             )
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
     im.putdata(pixels)
-    if args.verbose and not args.quiet:
-        print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
+    #if args.verbose and not args.quiet:
+    #    print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
     im.save(new_image_file)
 
     if not args.quiet:
@@ -377,7 +426,7 @@ def main():
         hours, remaining_seconds = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remaining_seconds, 60)
         print(f"{current_time()} Finished"
-                if not args.verbose else 
+                if not args.verbose else
                     f"{current_time()} Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
 
 try:
