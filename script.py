@@ -1,20 +1,20 @@
 """module for manipulating image data in order for getting interesting results"""
 #!/usr/bin/env python3
 
-from posixpath import split
 import random
 import argparse
+import os
 import os.path
 from datetime import datetime
 from typing import List, Tuple
 from pathlib import Path
 import math
 import shutil
+import urllib.parse
 from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
 from PIL import Image, ImageChops # pylint: disable=import-error
 import requests # pylint: disable=import-error
-import urllib.parse 
 
 start_time = datetime.now()
 
@@ -24,9 +24,15 @@ CORRECT = "[green][*][/green]"
 DONE    = "[green][DONE][/green]"
 NOTICE  = "[yellow][!][/yellow]"
 
+DOWNLOADED_FOLDER_PATH = Path(os.path.join(Path.cwd(), "downloaded"))
+
+
 #TODO: maybe edit metadata to show what manipulations has been done to the image
 #TODO: allow multiple files to be given from command line and loop over each file
 #TODO: add flags for each image filter
+
+# NOTE: Using Path.cwd() might lead to problems if the script is ran
+#       from anywhere else other than here
 
 
 parser = argparse.ArgumentParser(
@@ -156,6 +162,25 @@ def current_time(just_time=False,just_date=False) -> str:
         return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
     else:
         return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
+
+def get_files_in_downloaded() -> List[str]:
+    """
+    Returns the amount of files in the `downloaded` folder
+    """
+
+    return os.listdir(DOWNLOADED_FOLDER_PATH)
+
+def clean_downloaded_folder() -> None:
+    """
+    Cleans the `downloaded` folder
+    """
+    nl_char = "\n"
+    tab_char = "\t"
+    print("Removed: "\
+            f"\n\tdownloaded/{f'{nl_char}{tab_char}downloaded/'.join(get_files_in_downloaded())}\n")
+    for file in get_files_in_downloaded():
+        if os.path.exists(file_path:=os.path.join(DOWNLOADED_FOLDER_PATH, file)):
+            os.remove(file_path)
 
 def split_url(url:str) -> Tuple:
     """
@@ -536,6 +561,17 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main(url=None):
     """Main entery point"""
+    # Checks files in downloaded and asks user if they want the deleted
+    if len(get_files_in_downloaded()) >= 1:
+        print("[yellow underline][NOTICE][/yellow underline] "\
+                f"[yellow underline]There are {len(get_files_in_downloaded())} "\
+                "files in the \"downloaded\" folder.[/yellow underline]")
+        print("[yellow underline]Do you want to remove them? [Y/n]: [/yellow underline]", end="")
+
+        choice = input().strip().lower()
+        if choice == "y" or choice == "":
+            clean_downloaded_folder()
+
     if url:
         args.image_url = url
     if args.image_url and args.image:
@@ -637,7 +673,7 @@ def main(url=None):
         print(f"\n{current_time()} Finished")
         # Hacky fix for when the original url doesnt contain "http" and requests tries to fix it.
         # requests returns a guess at the fixed url and I pass it to main().
-        # after main() is done with the fixed URL, an UnboundLocalError exception is raised 
+        # after main() is done with the fixed URL, an UnboundLocalError exception is raised
         # for image_resp from download_image().
         # so exit() is a quick and dirty fix for that exception.
         exit()
