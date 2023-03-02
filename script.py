@@ -1,11 +1,12 @@
 """module for manipulating image data in order for getting interesting results"""
 #!/usr/bin/env python3
 
+from posixpath import split
 import random
 import argparse
 import os.path
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 from pathlib import Path
 import math
 import shutil
@@ -13,6 +14,7 @@ from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
 from PIL import Image, ImageChops # pylint: disable=import-error
 import requests # pylint: disable=import-error
+import urllib.parse 
 
 start_time = datetime.now()
 
@@ -155,6 +157,36 @@ def current_time(just_time=False,just_date=False) -> str:
     else:
         return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
+def split_url(url:str) -> Tuple:
+    """
+    Splits a URL
+
+    PARAMS:
+    ------
+        * url `str`: url string
+
+    RETURNS:
+    -------
+        * A list of all the URL parts
+    """
+
+    parsed_url = urllib.parse.urlsplit(url)
+    return parsed_url
+
+def prettify_url(url:str) -> str:
+    """
+    Prepares url to be downloaded
+
+    PARAMS:
+    -------
+        * url `str`: Image URL
+
+    RETURNS:
+    --------
+        * download-ready URL
+    """
+
+    return urllib.parse.urlunsplit(url._replace(query="", fragment=""))
 
 def download_image(url:str) -> Path:
     """
@@ -163,18 +195,28 @@ def download_image(url:str) -> Path:
     PARAMS:
     ------
         * url `str`: image URL
+
     RETURNS:
     -------
         * return path to downloaded image
     """
+
+    url = prettify_url(split_url(url))
     online_image_filename = url.split("/")[-1]
-    print(f"{CORRECT} Downloading image")
     try:
+        #global image_resp
         image_resp = requests.get(url, stream=True, timeout=3)
+        print(f"{CORRECT} Downloading image")
     except requests.exceptions.ReadTimeout:
         print("[red underline][ERROR][/red underline] "\
             "[red underline]CONNECTION TIMEOUT[/red underline]")
         exit()
+    except requests.exceptions.MissingSchema as _e:
+        # retrives the corrected link and removes the question mark at the end
+        fixed_url = str(_e).rsplit('meant', maxsplit=1)[-1][:-1].strip()
+        print("[yellow underline][NOTICE][/yellow underline] Error in URL. Trying again")
+        main(fixed_url)
+        #exit()
 
     if image_resp.status_code == 200:
         image_resp.raw.decode_content = True
@@ -182,11 +224,20 @@ def download_image(url:str) -> Path:
             print("[yellow underline][NOTICE][/yellow underline] \"downloaded\" "\
                 "folder not found!. Creating new")
             os.makedirs("downloaded")
-
-        with open(
-                downloaded_image_path:=os.path.join("downloaded",online_image_filename)
-                ,"wb") as file:
-            shutil.copyfileobj(image_resp.raw, file)
+        file_size = int(image_resp.headers.get("Content-Length",0))
+        desc = "(Unknown total file size)" if file_size == 0 else ""
+        with tqdm.wrapattr(
+            image_resp.raw,
+            "read",
+            total=file_size,
+            desc=desc,
+            leave=args.verbose) as r_raw:
+            with open(
+                    downloaded_image_path:=os.path.join("downloaded",online_image_filename),
+                    "wb") as file:
+                # remove tqdm.wrapatter & file_size to remove progress bar
+                #shutil.copyfileobj(image_resp.raw, file)
+                shutil.copyfileobj(r_raw, file)
             return downloaded_image_path
     else:
         print("[red underline][ERROR][/red underline] THE URL COULD NOT BE REACHED")
@@ -485,8 +536,10 @@ def combine_pixels(*pixel_lists) -> List:
             pbar.update(1)
     return combined_pixels
 
-def main():
+def main(url=None):
     """Main entery point"""
+    if url:
+        args.image_url = url
     if args.image_url and args.image:
         print("[red underline][WARNING][/red underline] "\
                 "[red underline]CANT USE ONLINE IMAGE URL "\
@@ -496,7 +549,7 @@ def main():
         print("[red underline][WARNING][/red underline] "\
                 "[red underline]NO IMAGE PATH OR URL GIVEN![/red underline]")
         exit()
-    if not args.quiet:
+    if not args.quiet and not url:
         print(f"{current_time()} Starting")
 
     if args.image_url:
