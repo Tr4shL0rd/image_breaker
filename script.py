@@ -104,7 +104,7 @@ class TqdmWrapper:
                         "{l_bar}{bar}| [{n_fmt}/{total_fmt} Total Iterations "\
                         "| {rate_fmt} | ETA: {eta:%y-%m-%d %H:%M}{postfix} "\
                         "| ETR: {remaining}]",
-            leave=args.verbose,#False if not args.verbose else True,
+            leave=args.verbose,,
             disable=self.disable
         )
         return self.pbar
@@ -190,10 +190,8 @@ def download_image(url:str) -> Path:
             shutil.copyfileobj(image_resp.raw, file)
             return downloaded_image_path
     else:
-        # deciding if it best to handle error here or in main
+        print("[red underline][ERROR][/red underline] THE URL COULD NOT BE REACHED")
         return None
-        #print("[red underline][ERROR][/red underline] THE URL COULD NOT BE REACHED")
-        #exit()
 
 def noise(image:Image, intensity:int = 10) -> List:
     """
@@ -546,13 +544,12 @@ def main():
             f"{new_image_file} [MAIN()]")
     else:
         # deciding if output should be a working dir or image dir
-        #new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
         if not args.output_name:
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{file_name.name}"))
         elif args.output_name:
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"{args.output_name}"))
 
-    im = Image.open(image_file)#pylint: disable=invalid-name
+    im = Image.open(image_file) # pylint: disable=invalid-name
 
     shift_pixels                = shift(im)
     duplicated_pixels           = duplicate(im)
