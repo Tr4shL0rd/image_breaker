@@ -1,6 +1,7 @@
 data/
 output/*
 test_images/
+downloaded/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

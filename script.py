@@ -12,6 +12,12 @@ from rich import print # pylint: disable=redefined-builtin, import-error
 from PIL import Image, ImageChops
 import math
 
+# for online image downloading
+import wget
+import requests
+import shutil
+
+
 start_time = datetime.now()
 
 VERBOSE_STRING = "[yellow][VERBOSE][/yellow]"
@@ -36,6 +42,12 @@ parser.add_argument(
                     dest="image",
                     action="store",
                     help="image to manipulate",
+                    )
+parser.add_argument(
+                    "-u", "--url",
+                    dest="image_url",
+                    action="store",
+                    help="url of image"
                     )
 parser.add_argument(
                     "-v","--verbose",
@@ -148,6 +160,34 @@ def current_time(just_time=False,just_date=False) -> str:
     else:
         return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
+def download_image(url:str) -> Path:
+    """
+    Downloads an image from a URL
+
+    PARAMS:
+    ------
+        * url `str`: image URL
+    RETURNS:
+    -------
+        * return path to downloaded image
+    """
+
+    online_image_filename = url.split("/")[-1]
+    image_resp = requests.get(url, stream=True)
+    if image_resp.status_code == 200:
+        image_resp.raw.decode_content = True
+        if not os.path.exists("downloaded"):
+            os.makedirs("downloaded")
+        with open(
+                downloaded_image_path:=os.path.join("downloaded",online_image_filename)
+                ,"wb") as file:
+            shutil.copyfileobj(image_resp.raw, file)
+            return downloaded_image_path
+    else:
+        # deciding if it best to handle error here or in main
+        return None
+        #print("[red underline][ERROR][/red underline] THE URL COULD NOT BE REACHED")
+        #exit()
 def noise(image:Image, intensity:int = 10) -> List:
     """
     Adds pseudo noise to an image
@@ -167,7 +207,6 @@ def noise(image:Image, intensity:int = 10) -> List:
             print(f"{CORRECT} Adding noise")
     img_pixels = list(image.getdata())
     _new_pixels = []
-    #for pixel in tqdm(img_pixels,total=len(img_pixels),desc="Adding noise",bar_format="{desc}: {percentage:3.0f}% |{bar}|",leave=False,disable=args.no_progress or args.quiet):
     with TqdmWrapper(
                     desc="Adding Noise",
                     total=len(img_pixels),
@@ -442,26 +481,42 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main():
     """Main entery point"""
-    if not args.image:
+    if args.image_url and args.image:
         print("[red underline][WARNING][/red underline] "\
-                f"[red underline]NO IMAGE PATH GIVEN![/red underline]")
+                "[red underline]CANT USE ONLINE IMAGE URL "\
+                "AND LOCAL IMAGE FILE AT THE SAME TIME![/red underline]")
+        exit()
+    if not args.image and not args.image_url:
+        print("[red underline][WARNING][/red underline] "\
+                "[red underline]NO IMAGE PATH OR URL GIVEN![/red underline]")
         exit()
     if not args.quiet:
         print(f"{current_time()} Starting")
 
-    # path to image (image file included)
-    image_file = Path(args.image).absolute()
+    if args.image_url:
+        # downloads image from url
+        image_file = download_image(args.image_url)
+        if image_file is None:
+            print("[red underline][ERROR][/red underline]")
+            exit()
+        image_file = Path(image_file)
+    elif args.image:
+        # path to image (image file included)
+        image_file = Path(args.image).absolute()
+    else:
+        print("[red underline][ERROR][/red underline]")
     # path to folder containing image file
     image_path = Path(image_file.parent)
     file_name = Path(f"new_{image_file.name}")
     if not image_file.exists():
-        print(f"[red underline][WARNING][/red underline] "\
+        print("[red underline][WARNING][/red underline] "\
                 f"[red underline]FILE \"{image_file}\" WAS NOT FOUND[/red underline]")
         exit()
     if args.output_name:
         file_name = Path(args.output_name)
+        print(file_name)
         if not file_name.suffix:
-            print(f"[red underline][WARNING] NO FILE EXTENSION GIVEN! "\
+            print("[red underline][WARNING] NO FILE EXTENSION GIVEN! "\
                 f"using \"{image_file.suffix}\"[/red underline]")
             file_name = f"{file_name}{image_file.suffix}"
 
@@ -482,7 +537,11 @@ def main():
     else:
         # deciding if output should be a working dir or image dir
         #new_image_file = Path(os.path.join(image_path,f"new_{image_file.name}"))
-        new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{image_file.name}"))
+        if not args.output_name:
+            new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{file_name.name}"))
+        elif args.output_name:
+            new_image_file = Path(os.path.join(Path.cwd(), "output",f"{args.output_name}"))
+
     im = Image.open(image_file)#pylint: disable=invalid-name
 
     shift_pixels                = shift(im)
