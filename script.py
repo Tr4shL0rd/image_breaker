@@ -7,12 +7,12 @@ import os.path
 from datetime import datetime
 from typing import List
 from pathlib import Path
+import math
+import shutil
 from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
-from PIL import Image, ImageChops
-import math
-import requests
-import shutil
+from PIL import Image, ImageChops # pylint: disable=import-error
+import requests # pylint: disable=import-error
 
 start_time = datetime.now()
 
@@ -95,7 +95,7 @@ class TqdmWrapper:
             "arrow": " >=",
         }
     def __enter__(self):
-        self.pbar = tqdm(
+        self.pbar = tqdm( # pylint: disable=attribute-defined-outside-init
             total=self.total,
             desc=self.desc,
             ascii=self.bar_styles["fade"],
@@ -129,7 +129,7 @@ def rng(min_num:int, max_num:int):
     if not min_num:
         min_num = 0
     return random.randint(min_num,max_num)
-    
+
 def current_time(just_time=False,just_date=False) -> str:
     """
     returns current time
@@ -259,7 +259,8 @@ def shift(image:Image, intensity:int=10) -> List:
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
-                    f"ADDING PIXEL SHIFTING TO {image.filename} [SHIFT(image={image.filename}, {intensity=})]")
+                    f"ADDING PIXEL SHIFTING TO {image.filename} "\
+                        "[SHIFT(image={image.filename}, {intensity=})]")
         else:
             print(f"{CORRECT} Shifting pixels")
     width, height = image.size
@@ -310,8 +311,9 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
     """
     if not args.quiet:
         if args.verbose:
-            print(f"{current_time()}{VERBOSE_STRING} "
-                    f"DUPLICATING PIXELS TO {image.filename} [DUPLICATE(image={image.filename}, {grid_size=}, {chance=})]")
+            print(f"{current_time()}{VERBOSE_STRING} "\
+                    f"DUPLICATING PIXELS TO {image.filename} "\
+                        "[DUPLICATE(image={image.filename}, {grid_size=}, {chance=})]")
         else:
             print(f"{CORRECT} Duplicating pixels")
 
@@ -378,7 +380,7 @@ def chromatic_aberration(image: Image, shift_size: int = 1) -> List:
         red_shifted   = ImageChops.offset(red, rng(1,255), rng(1,255))
         green_shifted = ImageChops.offset(green, rng(1,100), -rng(1,255))
         blue_shifted  = ImageChops.offset(blue, -rng(1,255), rng(1,100))
-    
+
     # Merge the shifted color channels back into an image.
     shifted_image = Image.merge("RGB", (red_shifted, green_shifted, blue_shifted))
 
@@ -426,7 +428,7 @@ def vignette(image: Image, intensity: int = 1):
                 # distance to center from current pixel
                 distance = math.sqrt((x - width / 2) ** 2 + (y - height / 2) ** 2)
                 # intensity factor based on the distance from the center
-                intensity_factor = 1 - (distance / (math.sqrt((width / 2) ** 2 + (height / 2) ** 2)))
+                intensity_factor = 1-(distance / (math.sqrt((width / 2) ** 2 + (height / 2) ** 2)))
                 # adds intensity factor to the pixel values
                 new_pixel = (
                     int(pixel[0] * new_intensity / intensity),
@@ -504,7 +506,8 @@ def main():
         # downloads image from url
         image_file = download_image(args.image_url)
         if image_file is None:
-            print("[red underline][ERROR][/red underline] [red underline]IMAGE IS NONE[/red underline]")
+            print("[red underline][ERROR][/red underline] "\
+                    "[red underline]IMAGE IS NONE[/red underline]")
             exit()
         image_file = Path(image_file)
     elif args.image:
@@ -571,14 +574,14 @@ def main():
         print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
     im.save(new_image_file)
 
-    #if args.quiet:
-    #    pass
     if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} SAVED TO [underline]{new_image_file}[/underline] [MAIN()]")
+        print(f"{current_time()}{VERBOSE_STRING} SAVED TO "\
+                "[underline]{new_image_file}[/underline] [MAIN()]")
         total_seconds = (datetime.now() - start_time).total_seconds()
         hours, remaining_seconds = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remaining_seconds, 60)
-        print(f"\n{current_time()}{VERBOSE_STRING} Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
+        print(f"\n{current_time()}{VERBOSE_STRING} "\
+                f"Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
     else:
         print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
         print(f"\n{current_time()} Finished")
