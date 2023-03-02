@@ -216,8 +216,6 @@ def download_image(url:str) -> Path:
         fixed_url = str(_e).rsplit('meant', maxsplit=1)[-1][:-1].strip()
         print("[yellow underline][NOTICE][/yellow underline] Error in URL. Trying again")
         main(fixed_url)
-        #exit()
-
     if image_resp.status_code == 200:
         image_resp.raw.decode_content = True
         if not os.path.exists("downloaded"):
@@ -597,24 +595,27 @@ def main(url=None):
     else:
         # deciding if output should be a working dir or image dir
         if not args.output_name:
-            new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{file_name.name}"))
+            # fix for when downloading image
+            # "_new" gets added to the start of the file name for some reason
+            file_name = str(file_name).replace("new_","")
+            new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{file_name}"))
         elif args.output_name:
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"{args.output_name}"))
 
     im = Image.open(image_file) # pylint: disable=invalid-name
 
     shift_pixels                = shift(im)
-    duplicated_pixels           = duplicate(im)
-    noise_pixels                = noise(im, intensity=10)
-    chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
-    vignette_pixels             = vignette(im, intensity=100)
+    #duplicated_pixels           = duplicate(im)
+    #noise_pixels                = noise(im, intensity=10)
+    #chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
+    #vignette_pixels             = vignette(im, intensity=100)
 
     pixels = combine_pixels(
-                            vignette_pixels,
                             shift_pixels,
-                            duplicated_pixels,
-                            noise_pixels,
-                            chromatic_aberration_pixels,
+                            #duplicated_pixels,
+                            #noise_pixels,
+                            #chromatic_aberration_pixels,
+                            #vignette_pixels,
                             )
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
@@ -634,6 +635,12 @@ def main(url=None):
     else:
         print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
         print(f"\n{current_time()} Finished")
+        # Hacky fix for when the original url doesnt contain "http" and requests tries to fix it.
+        # requests returns a guess at the fixed url and I pass it to main().
+        # after main() is done with the fixed URL, an UnboundLocalError exception is raised 
+        # for image_resp from download_image().
+        # so exit() is a quick and dirty fix for that exception.
+        exit()
 
 
 try:
