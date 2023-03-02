@@ -22,7 +22,6 @@ CORRECT = "[green][*][/green]"
 DONE    = "[green][DONE][/green]"
 NOTICE  = "[yellow][!][/yellow]"
 
-IMAGE_SIMULATION_SIZE = list(range(2795520))
 #TODO: maybe edit metadata to show what manipulations has been done to the image
 #TODO: allow multiple files to be given from command line and loop over each file
 #TODO: add flags for each image filter
