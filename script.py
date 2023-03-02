@@ -292,9 +292,8 @@ def shift(image:Image, intensity:int=10) -> List:
 
 def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
     """
-    CURRENTLY DOESNT WORK ALONE, OTHER FUNCTIONS MUST BE PASSED TO COMBINE_PIXELS ALONGSIDE THIS ONE!
     Duplicates random NxN grid of pixels of an image and places them at a random location
-    
+
     PARAMS:
     -------
         * image `Image`: Input image
@@ -307,7 +306,8 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
 
     NOTE:
     -----
-        * the bigger the grid_size the longer the function takes
+        * The bigger the grid_size the longer the function takes
+        * Cannot be passed to combine_pixels() alone
     """
     if not args.quiet:
         if args.verbose:
@@ -357,7 +357,7 @@ def chromatic_aberration(image: Image, shift_size: int = 1) -> List:
         * _new_pixels `list`: List of shifted pixels.
     NOTE:
     _____
-        * If shift_size is 0 it will be a random distance in any direction. 
+        * If shift_size is 0 it will be a random distance in any direction.
     """
 
     if not args.quiet:
@@ -421,12 +421,12 @@ def vignette(image: Image, intensity: int = 1):
                     total=height,
                     disable=args.no_progress or args.quiet
                     ) as pbar:
-        for y in range(height):
-            for x in range(width):
+        for _y in range(height):
+            for _x in range(width):
                 # current pixel value
-                pixel = pixels[y * width + x]
+                pixel = pixels[_y * width + _x]
                 # distance to center from current pixel
-                distance = math.sqrt((x - width / 2) ** 2 + (y - height / 2) ** 2)
+                distance = math.sqrt((_x - width / 2) ** 2 + (_y - height / 2) ** 2)
                 # intensity factor based on the distance from the center
                 intensity_factor = 1-(distance / (math.sqrt((width / 2) ** 2 + (height / 2) ** 2)))
                 # adds intensity factor to the pixel values
