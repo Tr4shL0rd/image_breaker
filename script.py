@@ -11,12 +11,8 @@ from tqdm import tqdm # pylint: disable=import-error
 from rich import print # pylint: disable=redefined-builtin, import-error
 from PIL import Image, ImageChops
 import math
-
-# for online image downloading
-import wget
 import requests
 import shutil
-
 
 start_time = datetime.now()
 
@@ -116,7 +112,7 @@ class TqdmWrapper:
     def __exit__(self, exc_type, exc_value, traceback):
         self.pbar.close()
 
-def rng(min:int,max:int):
+def rng(min_num:int, max_num:int):
     """
     returns a random int between min and max
 
@@ -130,9 +126,9 @@ def rng(min:int,max:int):
         * returns a random int
 
     """
-    if not min:
-        min = 0
-    return random.randint(min,max)
+    if not min_num:
+        min_num = 0
+    return random.randint(min_num,max_num)
     
 def current_time(just_time=False,just_date=False) -> str:
     """
@@ -160,6 +156,7 @@ def current_time(just_time=False,just_date=False) -> str:
     else:
         return datetime.now().strftime("[%d/%m/%Y|%H:%M:%S]")
 
+
 def download_image(url:str) -> Path:
     """
     Downloads an image from a URL
@@ -171,13 +168,22 @@ def download_image(url:str) -> Path:
     -------
         * return path to downloaded image
     """
-
     online_image_filename = url.split("/")[-1]
-    image_resp = requests.get(url, stream=True)
+    print(f"{CORRECT} Downloading image")
+    try:
+        image_resp = requests.get(url, stream=True, timeout=3)
+    except requests.exceptions.ReadTimeout:
+        print("[red underline][ERROR][/red underline] "\
+            "[red underline]CONNECTION TIMEOUT[/red underline]")
+        exit()
+
     if image_resp.status_code == 200:
         image_resp.raw.decode_content = True
         if not os.path.exists("downloaded"):
+            print("[yellow underline][NOTICE][/yellow underline] \"downloaded\" "\
+                "folder not found!. Creating new")
             os.makedirs("downloaded")
+
         with open(
                 downloaded_image_path:=os.path.join("downloaded",online_image_filename)
                 ,"wb") as file:
@@ -188,6 +194,7 @@ def download_image(url:str) -> Path:
         return None
         #print("[red underline][ERROR][/red underline] THE URL COULD NOT BE REACHED")
         #exit()
+
 def noise(image:Image, intensity:int = 10) -> List:
     """
     Adds pseudo noise to an image
@@ -497,7 +504,7 @@ def main():
         # downloads image from url
         image_file = download_image(args.image_url)
         if image_file is None:
-            print("[red underline][ERROR][/red underline]")
+            print("[red underline][ERROR][/red underline] [red underline]IMAGE IS NONE[/red underline]")
             exit()
         image_file = Path(image_file)
     elif args.image:
