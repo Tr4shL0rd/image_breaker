@@ -104,7 +104,7 @@ class TqdmWrapper:
                         "{l_bar}{bar}| [{n_fmt}/{total_fmt} Total Iterations "\
                         "| {rate_fmt} | ETA: {eta:%y-%m-%d %H:%M}{postfix} "\
                         "| ETR: {remaining}]",
-            leave=args.verbose,,
+            leave=args.verbose,
             disable=self.disable
         )
         return self.pbar
