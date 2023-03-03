@@ -119,22 +119,20 @@ class TqdmWrapper:
     def __exit__(self, exc_type, exc_value, traceback):
         self.pbar.close()
 
-def rng(min_num:int, max_num:int):
+def rng(min_num:int=0, max_num:int=100):
     """
     returns a random int between min and max
 
     PARAMS:
     -------
-        * min `int`: min number
-        * max `int`: max number
+        * min_num `int`: min number
+        * max_num `int`: max number
 
     RETURNS:
     -------
-        * returns a random int
+        * returns a random int between min_num & max_num
 
     """
-    if not min_num:
-        min_num = 0
     return random.randint(min_num,max_num)
 
 def current_time(just_time=False,just_date=False) -> str:
@@ -274,20 +272,22 @@ def download_image(url:str) -> Path:
         print("[red underline][ERROR][/red underline] THE URL COULD NOT BE REACHED")
         return None
 
-def get_image_data(image:Image):
-    #pass
-    #image = Image.open("output/new_image.jpg")
+def get_image_data(image:Image) -> None:
+    """returns basic data about the image"""
+
     width,height = image.size
     image_name = str(image.filename).rsplit("/", maxsplit=1)[-1]
     image_entropy = image.entropy()
     image_format = image.format
-    image_info = image.info
-    print(f"{image_info = }")
+    try:
+        animated = image.is_animated
+    except AttributeError:
+        animated = False
     print(f"{image_format = }")
-    print(f"{image_entropy = }")
     print(f"{image_name = }")
     print(f"{width  = }\n{height = }")
-    exit()
+    print(f"{image_entropy = }")
+    print(f"{animated = }")
 
 def noise(image:Image, intensity:int = 10) -> List:
     """
@@ -617,7 +617,7 @@ def main(url=None):
         print("[red underline][WARNING][/red underline] "\
                 "[red underline]NO IMAGE PATH OR URL GIVEN![/red underline]")
         exit()
-    
+
     if args.image_url:
         # downloads image from url
         image_file = download_image(args.image_url)
@@ -669,20 +669,22 @@ def main(url=None):
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{file_name}"))
         elif args.output_name:
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"{args.output_name}"))
-    
-    im = Image.open(image_file) # pylint: disable=invalid-name
+
+    img = Image.open(image_file) 
+    get_image_data(img)
     try:
-        if im.is_animated:
+        if img.is_animated:
             print("[red underline][WARNING][/red underline] /"
                     "[red underline]IMAGE FILE IS ANIMATED![/red underline]")
     except AttributeError:
         # Only gif files have Image.is_animated
         pass
-    shift_pixels                = shift(im)
-    duplicated_pixels           = duplicate(im)
-    noise_pixels                = noise(im, intensity=10)
-    chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
-    vignette_pixels             = vignette(im, intensity=100)
+
+    shift_pixels                = shift(img)
+    duplicated_pixels           = duplicate(img)
+    noise_pixels                = noise(img, intensity=10)
+    chromatic_aberration_pixels = chromatic_aberration(img, shift_size=10)
+    vignette_pixels             = vignette(img, intensity=100)
 
     pixels = combine_pixels(
                             shift_pixels,
@@ -694,10 +696,10 @@ def main(url=None):
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} " /
                 "ADDING NEW DATA TO {new_image_file} [MAIN({url=})]")
-    im.putdata(pixels)
+    img.putdata(pixels)
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN({url=})]")
-    im.save(new_image_file)
+    img.save(new_image_file)
 
     if args.verbose:
         print(f"{current_time()}{VERBOSE_STRING} SAVED TO "\
