@@ -671,24 +671,29 @@ def main(url=None):
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"{args.output_name}"))
     
     im = Image.open(image_file) # pylint: disable=invalid-name
-    if im.is_animated:
-        print("[red underline][WARNING][/red underline] /"
-                "[red underline]IMAGE FILE IS ANIMATED![/red underline]")
+    try:
+        if im.is_animated:
+            print("[red underline][WARNING][/red underline] /"
+                    "[red underline]IMAGE FILE IS ANIMATED![/red underline]")
+    except AttributeError:
+        # Only gif files have Image.is_animated
+        pass
     shift_pixels                = shift(im)
-    #duplicated_pixels           = duplicate(im)
+    duplicated_pixels           = duplicate(im)
     noise_pixels                = noise(im, intensity=10)
-    #chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
-    #vignette_pixels             = vignette(im, intensity=100)
+    chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
+    vignette_pixels             = vignette(im, intensity=100)
 
     pixels = combine_pixels(
                             shift_pixels,
-                            #duplicated_pixels,
+                            duplicated_pixels,
                             noise_pixels,
-                            #chromatic_aberration_pixels,
-                            #vignette_pixels,
+                            chromatic_aberration_pixels,
+                            vignette_pixels,
                             )
     if args.verbose and not args.quiet:
-        print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN({url=})]")
+        print(f"{current_time()}{VERBOSE_STRING} " /
+                "ADDING NEW DATA TO {new_image_file} [MAIN({url=})]")
     im.putdata(pixels)
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN({url=})]")
