@@ -167,8 +167,6 @@ def get_files_in_downloaded() -> List[str]:
     """
     Returns the amount of files in the `downloaded` folder
     """
-    if not os.path.exists("downloaded"):
-        os.makedirs("downloaded")
     return os.listdir(DOWNLOADED_FOLDER_PATH)
 
 def clean_downloaded_folder() -> None:
@@ -238,7 +236,6 @@ def download_image(url:str) -> Path:
 
     try:
         image_resp = requests.get(url, stream=True, timeout=3)
-        print(f"{CORRECT} Downloading image")
     except requests.exceptions.ReadTimeout:
         print("[red underline][ERROR][/red underline] "\
             "[red underline]CONNECTION TIMEOUT[/red underline]")
@@ -276,6 +273,21 @@ def download_image(url:str) -> Path:
     else:
         print("[red underline][ERROR][/red underline] THE URL COULD NOT BE REACHED")
         return None
+
+def get_image_data(image:Image):
+    #pass
+    #image = Image.open("output/new_image.jpg")
+    width,height = image.size
+    image_name = str(image.filename).rsplit("/", maxsplit=1)[-1]
+    image_entropy = image.entropy()
+    image_format = image.format
+    image_info = image.info
+    print(f"{image_info = }")
+    print(f"{image_format = }")
+    print(f"{image_entropy = }")
+    print(f"{image_name = }")
+    print(f"{width  = }\n{height = }")
+    exit()
 
 def noise(image:Image, intensity:int = 10) -> List:
     """
@@ -342,7 +354,7 @@ def shift(image:Image, intensity:int=10) -> List:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
                     f"ADDING PIXEL SHIFTING TO {image.filename} "\
-                        "[SHIFT(image={image.filename}, {intensity=})]")
+                    f"[SHIFT(image={image.filename}, {intensity=})]")
         else:
             print(f"{CORRECT} Shifting pixels")
     width, height = image.size
@@ -395,7 +407,7 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
                     f"DUPLICATING PIXELS TO {image.filename} "\
-                        "[DUPLICATE(image={image.filename}, {grid_size=}, {chance=})]")
+                    f"[DUPLICATE(image={image.filename}, {grid_size=}, {chance=})]")
         else:
             print(f"{CORRECT} Duplicating pixels")
 
@@ -538,15 +550,6 @@ def combine_pixels(*pixel_lists) -> List:
     --------
         * combined_pixels `list`: a list of combined pixels
     """
-    if args.verbose:
-        print(f"{current_time()}{VERBOSE_STRING} CHECKING FOLDERS")
-    if not os.path.exists("output"):
-        print(f"{current_time()}{VERBOSE_STRING} CREATING OUTPUT FOLDER")
-        os.makedirs("output")
-    if not os.path.exists("downloaded"):
-        print(f"{current_time()}{VERBOSE_STRING} CREATING DOWNLOADED FOLDER")
-        os.makedirs("downloaded")
-
     if not args.quiet:
         if len(pixel_lists) == 0:
             print("[red underline][WARNING][/red underline] "\
@@ -580,7 +583,19 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main(url=None):
     """Main entery point"""
+    if not args.quiet and not url:
+        print(f"{current_time()} Starting")
+
     # Checks files in downloaded and asks user if they want the deleted
+    if args.verbose and url is None:
+        print(f"{current_time()}{VERBOSE_STRING} CHECKING FOLDERS")
+    if not os.path.exists("output"):
+        print(f"{current_time()}{VERBOSE_STRING} CREATING OUTPUT FOLDER")
+        os.makedirs("output")
+    if not os.path.exists("downloaded"):
+        print(f"{current_time()}{VERBOSE_STRING} CREATING DOWNLOADED FOLDER")
+        os.makedirs("downloaded")
+
     if len(get_files_in_downloaded()) >= 10:
         print("[yellow underline][NOTICE][/yellow underline] "\
                 f"[yellow underline]There are {len(get_files_in_downloaded())} "\
@@ -602,9 +617,7 @@ def main(url=None):
         print("[red underline][WARNING][/red underline] "\
                 "[red underline]NO IMAGE PATH OR URL GIVEN![/red underline]")
         exit()
-    if not args.quiet and not url:
-        print(f"{current_time()} Starting")
-
+    
     if args.image_url:
         # downloads image from url
         image_file = download_image(args.image_url)
@@ -636,11 +649,11 @@ def main(url=None):
     # path to new image (image file included)
     default_path = Path(os.path.join(Path.cwd(), "output", file_name))
     # path to output folder
-    default_output_path = Path(os.path.join(Path.cwd(), "output"))
     # creates a new default output folder if it isnt already there
-    if not default_output_path.exists():
-        print(f"{NOTICE} Creating default output folder!")
-        os.makedirs(default_output_path)
+    #default_output_path = Path(os.path.join(Path.cwd(), "output"))
+    #if not default_output_path.exists():
+    #    print(f"{NOTICE} Creating default output folder!")
+    #    os.makedirs(default_output_path)
     # checks if working path is the same as image_path
     if image_path == Path.cwd() or args.default_path:
         new_image_file = default_path
@@ -656,32 +669,34 @@ def main(url=None):
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"new_{file_name}"))
         elif args.output_name:
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"{args.output_name}"))
-
+    
     im = Image.open(image_file) # pylint: disable=invalid-name
-
+    if im.is_animated:
+        print("[red underline][WARNING][/red underline] /"
+                "[red underline]IMAGE FILE IS ANIMATED![/red underline]")
     shift_pixels                = shift(im)
-    duplicated_pixels           = duplicate(im)
+    #duplicated_pixels           = duplicate(im)
     noise_pixels                = noise(im, intensity=10)
-    chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
-    vignette_pixels             = vignette(im, intensity=100)
+    #chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
+    #vignette_pixels             = vignette(im, intensity=100)
 
     pixels = combine_pixels(
                             shift_pixels,
-                            duplicated_pixels,
+                            #duplicated_pixels,
                             noise_pixels,
-                            chromatic_aberration_pixels,
-                            vignette_pixels,
+                            #chromatic_aberration_pixels,
+                            #vignette_pixels,
                             )
     if args.verbose and not args.quiet:
-        print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
+        print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN({url=})]")
     im.putdata(pixels)
     if args.verbose and not args.quiet:
-        print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN()]")
+        print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN({url=})]")
     im.save(new_image_file)
 
     if args.verbose:
         print(f"{current_time()}{VERBOSE_STRING} SAVED TO "\
-                "[underline]{new_image_file}[/underline] [MAIN()]")
+                f"[underline]{new_image_file}[/underline] [MAIN({url=})]")
         total_seconds = (datetime.now() - start_time).total_seconds()
         hours, remaining_seconds = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remaining_seconds, 60)
