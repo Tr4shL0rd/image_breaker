@@ -226,11 +226,17 @@ def download_image(url:str) -> Path:
     -------
         * return path to downloaded image
     """
+    if not args.quiet:
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} DOWNLOADING {url} "\
+                    f"[DOWNLOAD_IMAGE(url={url}]")
+        else:
+            print(f"{CORRECT} Downloading image")
 
     url = prettify_url(split_url(url))
     online_image_filename = url.split("/")[-1]
+
     try:
-        #global image_resp
         image_resp = requests.get(url, stream=True, timeout=3)
         print(f"{CORRECT} Downloading image")
     except requests.exceptions.ReadTimeout:
@@ -242,12 +248,15 @@ def download_image(url:str) -> Path:
         fixed_url = str(_e).rsplit('meant', maxsplit=1)[-1][:-1].strip()
         print("[yellow underline][NOTICE][/yellow underline] Error in URL. Trying again")
         main(fixed_url)
+
     if image_resp.status_code == 200:
         image_resp.raw.decode_content = True
+
         if not os.path.exists("downloaded"):
             print("[yellow underline][NOTICE][/yellow underline] \"downloaded\" "\
                 "folder not found!. Creating new")
             os.makedirs("downloaded")
+
         file_size = int(image_resp.headers.get("Content-Length",0))
         desc = "(Unknown total file size)" if file_size == 0 else ""
         with tqdm.wrapattr(
@@ -255,7 +264,8 @@ def download_image(url:str) -> Path:
             "read",
             total=file_size,
             desc=desc,
-            leave=args.verbose) as r_raw:
+            leave=args.verbose,
+            disable=args.quiet) as r_raw:
             with open(
                     downloaded_image_path:=os.path.join("downloaded",online_image_filename),
                     "wb") as file:
@@ -680,12 +690,12 @@ def main(url=None):
     else:
         print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
         print(f"\n{current_time()} Finished")
-        # Hacky fix for when the original url doesnt contain "http" and requests tries to fix it.
-        # requests returns a guess at the fixed url and I pass it to main().
-        # after main() is done with the fixed URL, an UnboundLocalError exception is raised
-        # for image_resp from download_image().
-        # so exit() is a quick and dirty fix for that exception.
-        exit()
+    # Hacky fix for when the original url doesnt contain "http" and requests tries to fix it.
+    # requests returns a guess at the fixed url and I pass it to main().
+    # after main() is done with the fixed URL, an UnboundLocalError exception is raised
+    # for image_resp from download_image().
+    # so exit() is a quick and dirty fix for that exception.
+    exit()
 
 
 try:
