@@ -641,17 +641,17 @@ def main(url=None):
     im = Image.open(image_file) # pylint: disable=invalid-name
 
     shift_pixels                = shift(im)
-    #duplicated_pixels           = duplicate(im)
-    #noise_pixels                = noise(im, intensity=10)
-    #chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
-    #vignette_pixels             = vignette(im, intensity=100)
+    duplicated_pixels           = duplicate(im)
+    noise_pixels                = noise(im, intensity=10)
+    chromatic_aberration_pixels = chromatic_aberration(im, shift_size=10)
+    vignette_pixels             = vignette(im, intensity=100)
 
     pixels = combine_pixels(
                             shift_pixels,
-                            #duplicated_pixels,
-                            #noise_pixels,
-                            #chromatic_aberration_pixels,
-                            #vignette_pixels,
+                            duplicated_pixels,
+                            noise_pixels,
+                            chromatic_aberration_pixels,
+                            vignette_pixels,
                             )
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} ADDING NEW DATA TO {new_image_file} [MAIN()]")
