@@ -167,7 +167,8 @@ def get_files_in_downloaded() -> List[str]:
     """
     Returns the amount of files in the `downloaded` folder
     """
-
+    if not os.path.exists("downloaded"):
+        os.makedirs("downloaded")
     return os.listdir(DOWNLOADED_FOLDER_PATH)
 
 def clean_downloaded_folder() -> None:
@@ -527,6 +528,14 @@ def combine_pixels(*pixel_lists) -> List:
     --------
         * combined_pixels `list`: a list of combined pixels
     """
+    if args.verbose:
+        print(f"{current_time()}{VERBOSE_STRING} CHECKING FOLDERS")
+    if not os.path.exists("output"):
+        print(f"{current_time()}{VERBOSE_STRING} CREATING OUTPUT FOLDER")
+        os.makedirs("output")
+    if not os.path.exists("downloaded"):
+        print(f"{current_time()}{VERBOSE_STRING} CREATING DOWNLOADED FOLDER")
+        os.makedirs("downloaded")
 
     if not args.quiet:
         if len(pixel_lists) == 0:
@@ -562,7 +571,7 @@ def combine_pixels(*pixel_lists) -> List:
 def main(url=None):
     """Main entery point"""
     # Checks files in downloaded and asks user if they want the deleted
-    if len(get_files_in_downloaded()) >= 1:
+    if len(get_files_in_downloaded()) >= 10:
         print("[yellow underline][NOTICE][/yellow underline] "\
                 f"[yellow underline]There are {len(get_files_in_downloaded())} "\
                 "files in the \"downloaded\" folder.[/yellow underline]")
