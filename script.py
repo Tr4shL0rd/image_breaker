@@ -583,6 +583,12 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main(url=None):
     """Main entery point"""
+    if args.quiet and args.verbose:
+        #args.verbose = False
+        choice = input("Both the \"quiet\" and the \"verbose\" flag are set to True. disable \"quiet\" flag? [Y/n]").strip().lower() or ""
+        if choice == "" or choice == "y":
+            args.verbose = True
+            args.quiet = False
     if not args.quiet and not url:
         print(f"{current_time()} Starting")
 
@@ -590,10 +596,12 @@ def main(url=None):
     if args.verbose and url is None:
         print(f"{current_time()}{VERBOSE_STRING} CHECKING FOLDERS")
     if not os.path.exists("output"):
-        print(f"{current_time()}{VERBOSE_STRING} CREATING OUTPUT FOLDER")
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} CREATING OUTPUT FOLDER")
         os.makedirs("output")
     if not os.path.exists("downloaded"):
-        print(f"{current_time()}{VERBOSE_STRING} CREATING DOWNLOADED FOLDER")
+        if args.verbose:
+            print(f"{current_time()}{VERBOSE_STRING} CREATING DOWNLOADED FOLDER")
         os.makedirs("downloaded")
 
     if len(get_files_in_downloaded()) >= 10:
@@ -659,7 +667,7 @@ def main(url=None):
         new_image_file = default_path
         if args.verbose and not args.quiet:
             print(f"{current_time()}{VERBOSE_STRING} USING DEFAULT OUTPUT LOCATION: "\
-            f"{new_image_file} [MAIN()]")
+            f"{new_image_file} [MAIN({url = })]")
     else:
         # deciding if output should be a working dir or image dir
         if not args.output_name:
@@ -670,8 +678,9 @@ def main(url=None):
         elif args.output_name:
             new_image_file = Path(os.path.join(Path.cwd(), "output",f"{args.output_name}"))
 
-    img = Image.open(image_file) 
-    get_image_data(img)
+    img = Image.open(image_file)
+    if args.verbose:
+        get_image_data(img)
     try:
         if img.is_animated:
             print("[red underline][WARNING][/red underline] /"
@@ -694,8 +703,8 @@ def main(url=None):
                             vignette_pixels,
                             )
     if args.verbose and not args.quiet:
-        print(f"{current_time()}{VERBOSE_STRING} " /
-                "ADDING NEW DATA TO {new_image_file} [MAIN({url=})]")
+        print(f"{current_time()}{VERBOSE_STRING} "\
+                f"ADDING NEW DATA TO {new_image_file} [MAIN({url=})]")
     img.putdata(pixels)
     if args.verbose and not args.quiet:
         print(f"{current_time()}{VERBOSE_STRING} SAVING {new_image_file} [MAIN({url=})]")
@@ -709,7 +718,7 @@ def main(url=None):
         minutes, seconds = divmod(remaining_seconds, 60)
         print(f"\n{current_time()}{VERBOSE_STRING} "\
                 f"Finished after {int(hours)}:{int(minutes)}:{int(seconds)}")
-    else:
+    elif not args.verbose and not args.quiet:
         print(f"{DONE} Saved to [underline]{new_image_file}[/underline]")
         print(f"\n{current_time()} Finished")
     # Hacky fix for when the original url doesnt contain "http" and requests tries to fix it.
