@@ -255,8 +255,8 @@ def download_image(url:str) -> Path:
         file_size = int(image_resp.headers.get("Content-Length",0))
         desc = "(Unknown total file size)" if file_size == 0 else ""
         with tqdm.wrapattr(
-            image_resp.raw,
-            "read",
+            stream=image_resp.raw,
+            method="read",
             total=file_size,
             desc=desc,
             leave=args.verbose,
@@ -583,9 +583,11 @@ def combine_pixels(*pixel_lists) -> List:
 
 def main(url=None):
     """Main entery point"""
+    # if both output flags are enabled
     if args.quiet and args.verbose:
         #args.verbose = False
-        choice = input("Both the \"quiet\" and the \"verbose\" flag are set to True. disable \"quiet\" flag? [Y/n]").strip().lower() or ""
+        choice = input("Both the \"quiet\" and the \"verbose\" flag are set to True."\
+                        "disable \"quiet\" flag? [Y/n]").strip().lower() or ""
         if choice == "" or choice == "y":
             args.verbose = True
             args.quiet = False
@@ -604,6 +606,7 @@ def main(url=None):
             print(f"{current_time()}{VERBOSE_STRING} CREATING DOWNLOADED FOLDER")
         os.makedirs("downloaded")
 
+    # folder clean up
     if len(get_files_in_downloaded()) >= 10:
         print("[yellow underline][NOTICE][/yellow underline] "\
                 f"[yellow underline]There are {len(get_files_in_downloaded())} "\
