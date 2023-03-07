@@ -11,10 +11,10 @@ from pathlib import Path
 import math
 import shutil
 import urllib.parse
-from tqdm import tqdm # pylint: disable=import-error
-from rich import print # pylint: disable=redefined-builtin, import-error
-from PIL import Image, ImageChops # pylint: disable=import-error
-import requests # pylint: disable=import-error
+from tqdm import tqdm
+from rich import print # pylint: disable=redefined-builtin
+from PIL import Image, ImageChops
+import requests
 
 start_time = datetime.now()
 
