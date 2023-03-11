@@ -222,6 +222,7 @@ def download_image(url:str) -> Path:
     -------
         * return path to downloaded image
     """
+
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} DOWNLOADING {url} "\
