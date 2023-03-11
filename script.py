@@ -25,6 +25,7 @@ DONE    = "[green][DONE][/green]"
 NOTICE  = "[yellow][!][/yellow]"
 
 DOWNLOADED_FOLDER_PATH = Path(os.path.join(Path.cwd(), "downloaded"))
+OUTPUT_FOLDER_PATH     = Path(os.path.join(Path.cwd(), "output"))
 
 
 #TODO: maybe edit metadata to show what manipulations has been done to the image
@@ -170,6 +171,13 @@ def get_files_in_downloaded() -> List[str]:
 
     return os.listdir(DOWNLOADED_FOLDER_PATH)
 
+def get_files_in_output() -> List[str]:
+    """
+    Returns the amount of files in the `output` folder.
+    """
+
+    return os.listdir(OUTPUT_FOLDER_PATH)
+
 def clean_downloaded_folder() -> None:
     """
     Cleans the `downloaded` folder
@@ -181,6 +189,19 @@ def clean_downloaded_folder() -> None:
             f"\n\tdownloaded/{f'{nl_char}{tab_char}downloaded/'.join(get_files_in_downloaded())}\n")
     for file in get_files_in_downloaded():
         if os.path.exists(file_path:=os.path.join(DOWNLOADED_FOLDER_PATH, file)):
+            os.remove(file_path)
+
+def clean_output_folder() -> None:
+    """
+    Cleans the `output` folder
+    """
+
+    nl_char = "\n"
+    tab_char = "\t"
+    print("Removed: "\
+            f"\n\toutput/{f'{nl_char}{tab_char}output/'.join(get_files_in_output())}\n")
+    for file in get_files_in_output():
+        if os.path.exists(file_path:=os.path.join(OUTPUT_FOLDER_PATH, file)):
             os.remove(file_path)
 
 def split_url(url:str) -> Tuple:
@@ -619,16 +640,27 @@ def main(url=None):
             print(f"{current_time()}{VERBOSE_STRING} CREATING DOWNLOADED FOLDER")
         os.makedirs("downloaded")
 
-    # folder clean up
+    # /downloaded/ folder clean up
     if len(get_files_in_downloaded()) >= 10:
         print("[yellow underline][NOTICE][/yellow underline] "\
                 f"[yellow underline]There are {len(get_files_in_downloaded())} "\
                 "files in the \"downloaded\" folder.[/yellow underline]")
-        print("[yellow underline]Do you want to remove them? [Y/n]: [/yellow underline]", end="")
+        print("[yellow underline]Do you want to remove them? [Y/n]:[/yellow underline] ", end="")
 
         choice = input().strip().lower()
         if choice == "y" or choice == "":
             clean_downloaded_folder()
+
+    # /output/ folder clean up
+    if len(get_files_in_output()) >= 10:
+        print("[yellow underline][NOTICE][/yellow underline] "\
+                f"[yellow underline]There are {len(get_files_in_output())} "\
+                    "files in the \"output\" folder.[/yellow underline]")
+        print("[yellow underline]Do you want to remove them? [Y/n]:[/yellow underline] ", end="")
+
+        choice = input().strip().lower()
+        if choice == "y" or choice == "":
+            clean_output_folder()
 
     if url:
         args.image_url = url
