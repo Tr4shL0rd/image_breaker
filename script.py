@@ -133,6 +133,7 @@ def rng(min_num:int=0, max_num:int=100):
         * returns a random int between min_num & max_num
 
     """
+
     return random.randint(min_num,max_num)
 
 def current_time(just_time=False,just_date=False) -> str:
@@ -152,6 +153,7 @@ def current_time(just_time=False,just_date=False) -> str:
     -----
         * If both bools are False or True, both time and date are returned
     """
+
     if just_time:
         return datetime.now().strftime("[%H:%M:%S]")
     if just_date:
@@ -165,12 +167,14 @@ def get_files_in_downloaded() -> List[str]:
     """
     Returns the amount of files in the `downloaded` folder
     """
+
     return os.listdir(DOWNLOADED_FOLDER_PATH)
 
 def clean_downloaded_folder() -> None:
     """
     Cleans the `downloaded` folder
     """
+
     nl_char = "\n"
     tab_char = "\t"
     print("Removed: "\
@@ -304,6 +308,7 @@ def noise(image:Image, intensity:int = 10) -> List:
     --------
         * _new_pixels `list`: a list of pixels with added noise
     """
+
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} ADDING NOISE TO {image.filename} "\
@@ -354,6 +359,7 @@ def shift(image:Image, intensity:int=10) -> List:
     --------
         * _new_pixels `list`: A list of shifted pixels
     """
+
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
@@ -407,6 +413,7 @@ def duplicate(image: Image, grid_size:int=4, chance:int=5) -> List:
         * The bigger the grid_size the longer the function takes
         * Cannot be passed to combine_pixels() alone
     """
+
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
@@ -500,6 +507,7 @@ def vignette(image: Image, intensity: int = 1):
     --------
         * _new_pixels `list`: List of shifted pixels.
     """
+
     if not args.quiet:
         if args.verbose:
             print(f"{current_time()}{VERBOSE_STRING} "\
@@ -554,6 +562,7 @@ def combine_pixels(*pixel_lists) -> List:
     --------
         * combined_pixels `list`: a list of combined pixels
     """
+
     if not args.quiet:
         if len(pixel_lists) == 0:
             print("[red underline][WARNING][/red underline] "\
