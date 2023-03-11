@@ -243,6 +243,9 @@ def download_image(url:str) -> Path:
         fixed_url = str(_e).rsplit('meant', maxsplit=1)[-1][:-1].strip()
         print("[yellow underline][NOTICE][/yellow underline] Error in URL. Trying again")
         main(fixed_url)
+    except requests.exceptions.ConnectionError:
+        print("CONNECTION ERROR")
+        exit()
 
     if image_resp.status_code == 200:
         image_resp.raw.decode_content = True
@@ -651,7 +654,7 @@ def main(url=None):
         exit()
     if args.output_name:
         file_name = Path(args.output_name)
-        print(file_name)
+        #print(file_name)
         if not file_name.suffix:
             print("[red underline][WARNING] NO FILE EXTENSION GIVEN! "\
                 f"using \"{image_file.suffix}\"[/red underline]")
@@ -691,11 +694,12 @@ def main(url=None):
     except AttributeError:
         # Only gif files have Image.is_animated
         pass
-
+    shift_size = random.randint(1,100)
+    print(f"{shift_size = }")
     shift_pixels                = shift(img)
     duplicated_pixels           = duplicate(img)
     noise_pixels                = noise(img, intensity=10)
-    chromatic_aberration_pixels = chromatic_aberration(img, shift_size=10)
+    chromatic_aberration_pixels = chromatic_aberration(img, shift_size=shift_size)
     vignette_pixels             = vignette(img, intensity=100)
 
     pixels = combine_pixels(
